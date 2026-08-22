@@ -88,14 +88,14 @@ async function testDatabase() {
   } catch (err) {
     console.error(`\n❌ ERROR: ${err.message}`);
 
-    if (err.message.includes('connect')) {
-      console.error('\n💡 Is Docker running? Try:');
-      console.error('   1. Open Docker Desktop');
-      console.error('   2. Run: docker compose up -d');
-      console.error('   3. Wait 10 seconds, then run this script again');
+    if (err.message.includes('connect') || err.message.includes('ENOTFOUND')) {
+      console.error('\n💡 Database connection failed. Try:');
+      console.error('   1. Verify DATABASE_URL in your .env file');
+      console.error('   2. Ensure the Supabase project is active and using the IPv4 pooler endpoint');
+      console.error('   3. Run: node scripts/test-db.js');
     } else if (err.message.includes('postgis')) {
-      console.error('\n💡 PostGIS extension not found. Try:');
-      console.error('   psql -U landstack -d landstack -c "CREATE EXTENSION postgis;"');
+      console.error('\n💡 PostGIS extension not found. Enable PostGIS in Supabase SQL Editor:');
+      console.error('   CREATE EXTENSION IF NOT EXISTS postgis;');
     }
   } finally {
     await pool.end();

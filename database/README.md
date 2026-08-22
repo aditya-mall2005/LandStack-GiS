@@ -43,21 +43,21 @@ PostgreSQL + PostGIS
     └── users              ← Auth users + roles
 ```
 
-## Setup
+## Setup (Supabase PostgreSQL + PostGIS)
 
-```bash
-# Start PostgreSQL + PostGIS
-docker compose up -d
-
-# Wait for container to be healthy
-docker ps
-
-# Run the schema migration
-docker exec -i landstack-postgis psql -U landstack -d landstack < database/migrations/001_initial_schema.sql
-
-# Test connection
-node scripts/test-db.js
-```
+1. Create a Supabase project (PostGIS is pre-installed).
+2. Configure your `.env` file with the Supabase IPv4 connection pooler URL:
+   ```bash
+   DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
+   ```
+3. Run the schema migration:
+   ```bash
+   node scripts/migrate-supabase.js
+   ```
+4. Test database connection & PostGIS functions:
+   ```bash
+   node scripts/test-db.js
+   ```
 
 ## Key Design Decisions
 
