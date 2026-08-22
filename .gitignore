@@ -1,30 +1,43 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
+# ==============================================================================
+# LandStack — Comprehensive .gitignore
+# ==============================================================================
 
-# Next.js
+# 1. Environment & Secret Variables (CRITICAL — NEVER COMMIT)
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.vault
+*.env
+
+# 2. Package Dependencies
+node_modules/
+.pnp/
+.pnp.js
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# 3. Next.js & Build Outputs
 .next/
 out/
+build/
+dist/
+.swc/
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Large GIS files & dataset (don't commit to git)
-data/
+# 4. TypeScript & Tool Caches
 *.tsbuildinfo
-*.tif
-*.tiff
-*.gpkg
+next-env.d.ts.bak
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+# 5. Heavy GIS Datasets & Spatial Shapefiles (> 100MB, keep local)
+data/
+data/raw/
 *.shp
 *.shx
 *.dbf
@@ -33,21 +46,70 @@ data/
 *.sbn
 *.sbx
 *.qpj
+*.qmd
+*.shp.xml
+*.tif
+*.tiff
+*.gpkg
+*.geotiff
+*.las
+*.laz
+*.kml
+*.kmz
 
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-
-# Docker volumes
+# 6. Database & Docker Volumes
 postgres_data/
+supabase/.temp/
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
 
-# QGIS project files (local)
+# 7. QGIS & Desktop GIS Workspace Files
 gis/*.qgz
 gis/*.qgs
+gis/*.qgz~
+gis/*.qgs~
+*.qgz
+*.qgs
 
-# GPT chat logs (reference only)
-gptchatdetail
+# 8. Logs & Diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# 9. Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# 10. IDE & Editor Directories
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 11. AI Scratchpads, Transcripts & Reference Dumps
+gptchatdetail/
+gptchatdetail*
+.tempmediaStorage/
+.system_generated/
+scratch/
