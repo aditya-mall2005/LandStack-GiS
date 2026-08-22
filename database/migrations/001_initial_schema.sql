@@ -18,8 +18,7 @@
 --   6. GIST spatial indexes on ALL geometry columns
 --   7. metadata.data_lineage for field-level provenance
 --
--- Run: psql -d landstack -f seed.sql
--- Or:  docker exec -i landstack-postgis psql -U landstack -d landstack < seed.sql
+-- Run migration via Supabase: node scripts/migrate-supabase.js
 -- ============================================================
 
 -- Enable extensions
