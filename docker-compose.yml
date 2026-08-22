@@ -1,0 +1,21 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: landstack-postgis
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: landstack
+      POSTGRES_USER: landstack
+      POSTGRES_PASSWORD: landstack_sih2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U landstack -d landstack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
