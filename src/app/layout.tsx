@@ -14,17 +14,25 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: "Services",
+    label: "Citizen Services",
     items: [
       { href: "/services", icon: "📋", label: "Services" },
       { href: "/applications", icon: "📄", label: "My Applications", badge: "2" },
     ],
   },
   {
-    label: "Administration",
+    label: "Department Governance",
     items: [
       { href: "/officer", icon: "👨‍💼", label: "Officer Portal" },
-      { href: "/admin", icon: "⚙️", label: "Admin Dashboard" },
+      { href: "/officer/conflicts", icon: "⚠️", label: "Data Conflicts", badge: "3" },
+    ],
+  },
+  {
+    label: "Intelligence & Standards",
+    items: [
+      { href: "/admin/intelligence", icon: "🧠", label: "AI & Satellite AI" },
+      { href: "/admin/adapters", icon: "🔌", label: "State Adapters" },
+      { href: "/admin", icon: "⚙️", label: "Admin Overview" },
       { href: "/admin/import", icon: "📥", label: "Data Import" },
     ],
   },
@@ -63,13 +71,15 @@ function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="sidebar-avatar">RK</div>
-          <div className="sidebar-user-info">
-            <div className="sidebar-user-name">Ramesh Kumar</div>
-            <div className="sidebar-user-role">Citizen</div>
+        <Link href="/login" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <div className="sidebar-user" style={{ cursor: "pointer", transition: "background 0.2s" }}>
+            <div className="sidebar-avatar">VS</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">Vikram Singh</div>
+              <div className="sidebar-user-role">Revenue Officer (Switch) ⇄</div>
+            </div>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

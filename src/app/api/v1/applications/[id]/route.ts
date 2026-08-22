@@ -43,10 +43,19 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { status, officer_name = "Land Officer Vikram Singh", comments } = body;
+    const { 
+      status, 
+      current_step,
+      officer_name = "Land Officer Vikram Singh", 
+      role = "LAND_OFFICER",
+      department = "Revenue",
+      comments,
+      escalated,
+      escalation_reason
+    } = body;
 
-    if (!status) {
-      return NextResponse.json({ error: "status is required" }, { status: 400 });
+    if (!status && escalated === undefined && !current_step) {
+      return NextResponse.json({ error: "No update parameters provided" }, { status: 400 });
     }
 
     const appRes = await query(
@@ -59,29 +68,34 @@ export async function PATCH(
     }
 
     const application = appRes.rows[0];
+    const newStatus = status || application.status;
+    const newStep = current_step || application.current_step;
+    const isEscalated = escalated !== undefined ? escalated : application.escalated;
+    const escReason = escalation_reason || application.escalation_reason;
 
     const updateRes = await query(
       `UPDATE governance.service_requests
-       SET status = $1, assigned_officer = $2, updated_at = NOW()
-       WHERE application_no = $3
+       SET status = $1, current_step = $2, assigned_officer = $3, 
+           escalated = $4, escalation_reason = $5, updated_at = NOW()
+       WHERE application_no = $6
        RETURNING *`,
-      [status, officer_name, application.application_no]
+      [newStatus, newStep, officer_name, isEscalated, escReason, application.application_no]
     );
 
     const actionText = comments 
-      ? `Status changed to ${status}: ${comments}` 
-      : `Application ${status.toLowerCase()} by officer`;
+      ? `Action [${newStatus}]: ${comments}` 
+      : `Application updated to ${newStatus} (${newStep})`;
 
     await query(
-      `INSERT INTO governance.application_history (application_no, status, action, performed_by, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [application.application_no, status, actionText, officer_name]
+      `INSERT INTO governance.application_history (application_no, status, action, performed_by, role, department, comments, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+      [application.application_no, newStatus, actionText, officer_name, role, department, comments || null]
     );
 
     return NextResponse.json({
       success: true,
       application: updateRes.rows[0],
-      message: `Application ${application.application_no} updated to ${status}`,
+      message: `Application ${application.application_no} updated to ${newStatus}`,
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

@@ -23,7 +23,14 @@ export async function GET(request: NextRequest) {
         details,
         priority,
         status,
+        current_step,
         assigned_officer,
+        target_sla_days,
+        sla_deadline,
+        sla_status,
+        escalated,
+        escalation_reason,
+        precheck_results,
         created_at,
         updated_at
       FROM governance.service_requests

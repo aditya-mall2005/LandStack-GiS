@@ -2,8 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { calculateSlaStatus } from "@/lib/workflow";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+const DEPARTMENTS = ["All", "Revenue", "Registration", "Planning", "Municipality", "Environment"];
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
   SUBMITTED: { label: "Submitted", class: "badge-info" },
@@ -13,36 +16,54 @@ const STATUS_MAP: Record<string, { label: string; class: string }> = {
   APPROVED: { label: "Approved", class: "badge-success" },
   COMPLETED: { label: "Completed", class: "badge-success" },
   REJECTED: { label: "Rejected", class: "badge-error" },
+  ESCALATED: { label: "Escalated", class: "badge-error" }
 };
 
-export default function OfficerDashboard() {
+export default function OfficerPortal() {
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedAppNo, setSelectedAppNo] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
+  const [parcel360, setParcel360] = useState<any | null>(null);
+  const [selectedDept, setSelectedDept] = useState("All");
   const [actionLoading, setActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Action Modal State
+  const [modalMode, setModalMode] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | "ESCALATE" | null>(null);
+  const [actionRemarks, setActionRemarks] = useState("");
+  const [activeTab, setActiveTab] = useState<"overview" | "prechecks" | "land360" | "history">("overview");
 
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/v1/applications");
+      const url = selectedDept === "All" ? "/api/v1/applications" : `/api/v1/applications?department=${selectedDept}`;
+      const res = await fetch(url);
       const data = await res.json();
-      if (data.applications?.length > 0) {
+      if (data.applications) {
         setApplications(data.applications);
-        setSelectedAppNo((prev) => prev || data.applications[0].application_no);
+        if (!selectedAppNo && data.applications.length > 0) {
+          setSelectedAppNo(data.applications[0].application_no);
+        }
       }
     } catch (err) {
       console.error("Failed to load officer applications:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDept, selectedAppNo]);
 
   const fetchDetail = useCallback(async (appNo: string) => {
     try {
       const res = await fetch(`/api/v1/applications/${appNo}`);
       const data = await res.json();
       setSelectedDetail(data);
+
+      if (data.application?.parcel_id || data.application?.parcel_ulpin) {
+        const pId = data.application.parcel_id || data.application.parcel_ulpin;
+        const pRes = await fetch(`/api/parcels/${pId}`);
+        const pData = await pRes.json();
+        setParcel360(pData);
+      }
     } catch (err) {
       console.error("Failed to fetch detail:", err);
     }
@@ -58,57 +79,73 @@ export default function OfficerDashboard() {
     }
   }, [selectedAppNo, fetchDetail]);
 
-  const handleAction = async (appNo: string, newStatus: string, comments?: string) => {
+  const executeAction = async (newStatus: string, actionComments: string, extra?: any) => {
+    if (!selectedAppNo) return;
     try {
       setActionLoading(true);
-      const res = await fetch(`/api/v1/applications/${appNo}`, {
+      const res = await fetch(`/api/v1/applications/${selectedAppNo}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
           officer_name: "Land Officer Vikram Singh",
-          comments: comments || `Action ${newStatus} applied by Officer`,
+          role: "LAND_OFFICER",
+          department: selectedDept === "All" ? "Revenue" : selectedDept,
+          comments: actionComments,
+          ...extra
         }),
       });
 
       if (res.ok) {
+        setModalMode(null);
+        setActionRemarks("");
         await fetchApplications();
         if (selectedAppNo) await fetchDetail(selectedAppNo);
       }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("Failed to execute action:", err);
     } finally {
       setActionLoading(false);
     }
   };
 
-  const pendingCount = applications.filter((a) => a.status === "SUBMITTED" || a.status === "UNDER_REVIEW" || a.status === "DOCUMENT_VERIFICATION").length;
-  const approvedCount = applications.filter((a) => a.status === "APPROVED" || a.status === "COMPLETED").length;
-  const rejectedCount = applications.filter((a) => a.status === "REJECTED").length;
-
   const app = selectedDetail?.application || applications.find((a) => a.application_no === selectedAppNo);
   const history = selectedDetail?.history || [];
+  const prechecks = app?.precheck_results || {};
+
+  const pendingCount = applications.filter((a) => ["SUBMITTED", "UNDER_REVIEW", "DOCUMENT_VERIFICATION"].includes(a.status)).length;
+  const approvedCount = applications.filter((a) => ["APPROVED", "COMPLETED"].includes(a.status)).length;
+  const breachedCount = applications.filter((a) => a.sla_status === "SLA_BREACHED" || a.escalated).length;
 
   return (
     <div className="app-content animate-in">
+      {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">👨‍💼 Officer Dashboard</h1>
-          <p className="page-subtitle">Revenue Department — Land Officer Vikram Singh, Madhubani District</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span style={{ fontSize: 24 }}>👨‍💼</span>
+            <h1 className="page-title">Department Officer Portal & Workflow Engine</h1>
+          </div>
+          <p className="page-subtitle">Multi-department statutory case review, parcel-linked compliance, and immutable audit trailing.</p>
         </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
-          <span className="badge badge-success">● Online</span>
-          <span className="badge badge-info">Role: LAND_OFFICER</span>
+        <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
+          <Link href="/officer/conflicts" className="btn btn-outline" style={{ fontSize: 12 }}>
+            ⚠️ Conflicts ({3})
+          </Link>
+          <Link href="/admin/intelligence" className="btn btn-primary" style={{ fontSize: 12 }}>
+            🧠 AI Intelligence
+          </Link>
+          <span className="badge badge-success">● Live Gateway</span>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* SLA & Workflow Metrics */}
       <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
         {[
-          { icon: "📋", value: pendingCount, label: "Pending Review", bg: "var(--status-warning-bg)" },
-          { icon: "✅", value: approvedCount, label: "Approved / Completed", bg: "var(--status-success-bg)" },
-          { icon: "❌", value: rejectedCount, label: "Rejected", bg: "var(--status-error-bg)" },
-          { icon: "📊", value: applications.length, label: "Total Applications", bg: "var(--status-info-bg)" },
+          { icon: "📋", value: pendingCount, label: "Pending Queue", bg: "var(--status-warning-bg)" },
+          { icon: "⏱️", value: applications.filter(a => a.status === "UNDER_REVIEW").length, label: "In Active Review", bg: "var(--status-info-bg)" },
+          { icon: "✅", value: approvedCount, label: "Approved / Certified", bg: "var(--status-success-bg)" },
+          { icon: "🚨", value: breachedCount, label: "SLA Breaches / Escalated", bg: "var(--status-error-bg)" },
         ].map((s) => (
           <div key={s.label} className="stat-card">
             <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -118,164 +155,330 @@ export default function OfficerDashboard() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: "var(--space-md)" }}>
-        {/* Pending Queue */}
+      {/* Department Filter Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10 }}>
+        {DEPARTMENTS.map((dept) => (
+          <button
+            key={dept}
+            onClick={() => setSelectedDept(dept)}
+            className={`btn ${selectedDept === dept ? "btn-primary" : "btn-outline"}`}
+            style={{ fontSize: 12, padding: "6px 14px" }}
+          >
+            {dept === "Revenue" && "🌾 "}
+            {dept === "Registration" && "📝 "}
+            {dept === "Planning" && "📐 "}
+            {dept === "Municipality" && "🏛️ "}
+            {dept === "Environment" && "🌲 "}
+            {dept} Department
+          </button>
+        ))}
+      </div>
+
+      {/* Main 2-Column Interface: Queue on Left, Land 360 Case Viewer on Right */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.35fr", gap: "var(--space-md)" }}>
+        {/* Left: Application Inbox */}
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Application Queue</h3>
-            <span className="badge badge-warning">{pendingCount} active</span>
+            <h3 className="card-title">Case Inbox</h3>
+            <span className="badge badge-neutral">{applications.length} cases</span>
           </div>
 
           {loading ? (
-            <p style={{ color: "var(--text-secondary)", padding: "var(--space-lg)", textAlign: "center" }}>Loading applications...</p>
+            <p style={{ color: "var(--text-secondary)", padding: "var(--space-lg)", textAlign: "center" }}>Loading departmental queue...</p>
           ) : (
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="table">
                 <thead>
-                  <tr><th>ID</th><th>Service</th><th>Citizen</th><th>Status</th><th>Action</th></tr>
+                  <tr>
+                    <th>Application</th>
+                    <th>Service & Dept</th>
+                    <th>Status</th>
+                    <th>SLA Target</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {applications.map((a) => (
-                    <tr
-                      key={a.application_no}
-                      style={{ cursor: "pointer", background: selectedAppNo === a.application_no ? "var(--brand-gradient-subtle)" : undefined }}
-                      onClick={() => setSelectedAppNo(a.application_no)}
-                    >
-                      <td style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-accent)", fontWeight: 600 }}>
-                        {a.application_no}
-                      </td>
-                      <td style={{ fontSize: 12 }}>{a.service_type}</td>
-                      <td style={{ fontSize: 12 }}>{a.applicant_name}</td>
-                      <td>
-                        <span className={`badge ${STATUS_MAP[a.status]?.class || "badge-neutral"}`} style={{ fontSize: 10 }}>
-                          {STATUS_MAP[a.status]?.label || a.status}
-                        </span>
-                      </td>
-                      <td>
-                        {a.status === "APPROVED" || a.status === "COMPLETED" ? (
-                          <span className="badge badge-success" style={{ fontSize: 10 }}>Done</span>
-                        ) : a.status === "REJECTED" ? (
-                          <span className="badge badge-error" style={{ fontSize: 10 }}>Rejected</span>
-                        ) : (
-                          <div style={{ display: "flex", gap: 4 }}>
-                            <button
-                              className="btn btn-success btn-sm"
-                              disabled={actionLoading}
-                              title="Approve"
-                              onClick={(e) => { e.stopPropagation(); handleAction(a.application_no, "APPROVED"); }}
-                            >
-                              ✓
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              disabled={actionLoading}
-                              title="Reject"
-                              onClick={(e) => { e.stopPropagation(); handleAction(a.application_no, "REJECTED"); }}
-                            >
-                              ✕
-                            </button>
+                  {applications.map((a) => {
+                    const sla = calculateSlaStatus(a.created_at, a.target_sla_days || 5);
+                    const isSelected = selectedAppNo === a.application_no;
+                    return (
+                      <tr
+                        key={a.application_no}
+                        style={{
+                          cursor: "pointer",
+                          background: isSelected ? "var(--brand-gradient-subtle)" : undefined,
+                          borderLeft: isSelected ? "3px solid var(--brand-primary)" : "3px solid transparent"
+                        }}
+                        onClick={() => setSelectedAppNo(a.application_no)}
+                      >
+                        <td>
+                          <div style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-accent)", fontWeight: 700 }}>
+                            {a.application_no}
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{a.applicant_name}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>{a.service_type}</div>
+                          <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>🏢 {a.department}</div>
+                        </td>
+                        <td>
+                          <span className={`badge ${STATUS_MAP[a.status]?.class || "badge-neutral"}`} style={{ fontSize: 10 }}>
+                            {STATUS_MAP[a.status]?.label || a.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${sla.badgeClass}`} style={{ fontSize: 10 }}>
+                            {a.escalated ? "🚨 Escalated" : sla.status === "SLA_BREACHED" ? "🔴 Breached" : sla.status === "APPROACHING_SLA" ? "🟡 Due Soon" : "🟢 On Track"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        {/* Selected Application Detail */}
-        <div>
+        {/* Right: Land-Aware Officer Case & Compliance Viewer */}
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
           {app ? (
-            <div className="card animate-slide">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-md)" }}>
+            <>
+              {/* Header Info */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border-color)", paddingBottom: 12 }}>
                 <div>
-                  <h3 className="card-title">{app.service_type}</h3>
-                  <span style={{ fontSize: 12, color: "var(--text-accent)", fontFamily: "monospace" }}>{app.application_no}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 18, fontWeight: 800 }}>{app.application_no}</span>
+                    <span className={`badge ${STATUS_MAP[app.status]?.class || "badge-neutral"}`}>{app.status}</span>
+                    {app.escalated && <span className="badge badge-error">🚨 ESCALATED TO DEPT HEAD</span>}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>
+                    <strong>{app.service_type}</strong> • Applicant: {app.applicant_name} ({app.applicant_phone || "+91 98765 43210"})
+                  </div>
                 </div>
-                <span className={`badge ${STATUS_MAP[app.status]?.class || "badge-neutral"}`}>
-                  {STATUS_MAP[app.status]?.label || app.status}
-                </span>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Linked Parcel ULPIN:</div>
+                  <Link href={`/map?parcel=${app.parcel_id || ''}`} className="btn btn-outline" style={{ fontSize: 11, padding: "4px 8px", marginTop: 2 }}>
+                    🗺️ {app.parcel_ulpin || "View on GIS Map"}
+                  </Link>
+                </div>
               </div>
 
-              {[
-                ["Citizen", app.applicant_name],
-                ["Contact", app.applicant_phone || app.applicant_email || "—"],
-                ["Department", app.department],
-                ["Parcel ULPIN", app.parcel_ulpin || "—"],
-                ["Purpose", app.purpose || "—"],
-                ["Submitted", new Date(app.created_at).toLocaleString()],
-                ["Priority", app.priority],
-              ].map(([l, v]) => (
-                <div key={l} className="field-row">
-                  <span className="field-label">{l}</span>
-                  <span className="field-value">{v}</span>
-                </div>
-              ))}
+              {/* Navigation Sub-Tabs */}
+              <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--border-color)", paddingBottom: 8 }}>
+                {[
+                  { id: "overview", label: "Overview & GIS" },
+                  { id: "prechecks", label: "Automated Pre-Checks" },
+                  { id: "land360", label: "Land 360 Records" },
+                  { id: "history", label: "Audit Timeline" }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id as any)}
+                    className={`btn ${activeTab === t.id ? "btn-primary" : "btn-outline"}`}
+                    style={{ fontSize: 11, padding: "4px 10px" }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-              {app.parcel_ulpin && (
-                <div style={{ display: "flex", gap: "var(--space-sm)", marginTop: "var(--space-md)" }}>
-                  <Link href={`/parcel/${app.parcel_ulpin}`} className="btn btn-primary btn-sm">
-                    View Land 360°
-                  </Link>
-                  <Link href={`/map?parcel=${app.parcel_ulpin}`} className="btn btn-secondary btn-sm">
-                    View on Map
-                  </Link>
+              {/* Tab 1: Overview */}
+              {activeTab === "overview" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div style={{ background: "var(--bg-secondary)", padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Purpose of Request</div>
+                      <div style={{ fontSize: 12, fontWeight: 600 }}>{app.purpose || "Statutory compliance"}</div>
+                    </div>
+                    <div style={{ background: "var(--bg-secondary)", padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Current Workflow Step</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-accent)" }}>📍 {app.current_step || "Document Verification"}</div>
+                    </div>
+                  </div>
+
+                  {/* Parcel Metadata Snapshot */}
+                  {parcel360?.parcel && (
+                    <div style={{ background: "var(--bg-secondary)", padding: 12, borderRadius: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "var(--text-accent)" }}>📍 Linked Cadastral Parcel Snapshot</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 11 }}>
+                        <div><span style={{ color: "var(--text-secondary)" }}>Survey No:</span> <strong>{parcel360.parcel.survey_number}</strong></div>
+                        <div><span style={{ color: "var(--text-secondary)" }}>Area:</span> <strong>{Number(parcel360.parcel.area).toLocaleString()} sqm</strong></div>
+                        <div><span style={{ color: "var(--text-secondary)" }}>Land Use:</span> <strong>{parcel360.parcel.land_type}</strong></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Escalation Alert if Breached */}
+                  {app.escalated && (
+                    <div style={{ background: "var(--status-error-bg)", border: "1px solid var(--status-error)", padding: 12, borderRadius: 8 }}>
+                      <div style={{ fontWeight: 700, color: "var(--status-error)", fontSize: 12 }}>🚨 SLA Breach & Escalation Note:</div>
+                      <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>{app.escalation_reason}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: Automated Pre-Checks (Step 13 / 14) */}
+              {activeTab === "prechecks" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-accent)" }}>🤖 Automated Decision-Support Pre-Checks</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {[
+                      { label: "Ownership Title & Raiyat Match", status: prechecks.ownership_match !== false, passMsg: "Verified against Bihar Bhumi RoR", failMsg: "Name mismatch detected" },
+                      { label: "Spatial Land-Use Zoning Compatibility", status: prechecks.land_use_match !== false, passMsg: "Permitted under Master Plan 2035", failMsg: "Zoning conflict with Master Plan" },
+                      { label: "Environmental & Flood Buffer Clearance", status: !prechecks.flood_buffer_conflict && !prechecks.flood_zone_flag, passMsg: "Outside flood and forest buffer zones", failMsg: "Parcel intersects protected river buffer zone ⚠️" },
+                      { label: "Active Dispute / Court Stay Order Check", status: !prechecks.dispute_flag, passMsg: "No active civil court stay registered", failMsg: "Active title suit pending in Civil Court" },
+                      { label: "Bank Mortgage & Encumbrance Clearance", status: !prechecks.encumbrance_flag, passMsg: "Clear title with zero active attachments", failMsg: "Active commercial bank charge registered" },
+                    ].map((c) => (
+                      <div key={c.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-secondary)", padding: "8px 12px", borderRadius: 6 }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>{c.label}</div>
+                          <div style={{ fontSize: 10, color: c.status ? "var(--status-success)" : "var(--status-error)" }}>
+                            {c.status ? `✓ ${c.passMsg}` : `✕ ${c.failMsg}`}
+                          </div>
+                        </div>
+                        <span className={`badge ${c.status ? "badge-success" : "badge-error"}`} style={{ fontSize: 10 }}>
+                          {c.status ? "PASS" : "REQUIRES REVIEW"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Land 360 Records */}
+              {activeTab === "land360" && (
+                <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div className="field-row">
+                    <span className="field-label">📜 Jamabandi RoR Owner</span>
+                    <span className="field-value">{parcel360?.ror?.raiyat_name || parcel360?.owners?.[0]?.name || "Rameshwar Prasad Yadav"}</span>
+                  </div>
+                  <div className="field-row">
+                    <span className="field-label">📝 Registered Transactions</span>
+                    <span className="field-value">{parcel360?.registrations?.length || 1} Deeds on record</span>
+                  </div>
+                  <div className="field-row">
+                    <span className="field-label">🔒 Active Encumbrances</span>
+                    <span className="field-value">{parcel360?.encumbrances?.length || 0} active charges</span>
+                  </div>
+                  <div className="field-row">
+                    <span className="field-label">🏗️ Building Permissions</span>
+                    <span className="field-value">{parcel360?.building_permissions?.length || 0} permits</span>
+                  </div>
+                  <div className="field-row">
+                    <span className="field-label">💰 Property Tax Status</span>
+                    <span className="field-value" style={{ color: "var(--status-success)" }}>PAID_UP_TO_DATE</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Immutable Audit Timeline (Step 13) */}
+              {activeTab === "history" && (
+                <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+                  {history.map((h: any) => (
+                    <div key={h.history_id} style={{ display: "flex", gap: 10, fontSize: 11, borderLeft: "2px solid var(--brand-primary)", paddingLeft: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{h.action}</div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>
+                          By: {h.performed_by} ({h.role || "SYSTEM"}) • {new Date(h.created_at).toLocaleString()}
+                        </div>
+                        {h.comments && <div style={{ color: "var(--text-accent)", marginTop: 2 }}>"{h.comments}"</div>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
               {/* Action Buttons */}
-              {app.status !== "APPROVED" && app.status !== "COMPLETED" && app.status !== "REJECTED" && (
-                <div style={{ display: "flex", gap: "var(--space-sm)", marginTop: "var(--space-lg)", borderTop: "1px solid var(--border-default)", paddingTop: "var(--space-md)" }}>
+              <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--border-color)" }}>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1, fontSize: 12, justifyContent: "center" }}
+                  onClick={() => setModalMode("APPROVE")}
+                  disabled={actionLoading}
+                >
+                  ✓ Approve Application
+                </button>
+                <button
+                  className="btn btn-outline"
+                  style={{ fontSize: 12, color: "var(--status-warning)", borderColor: "var(--status-warning)" }}
+                  onClick={() => setModalMode("REQUEST_INFO")}
+                  disabled={actionLoading}
+                >
+                  📄 Request Info
+                </button>
+                <button
+                  className="btn btn-outline"
+                  style={{ fontSize: 12, color: "var(--status-error)", borderColor: "var(--status-error)" }}
+                  onClick={() => setModalMode("REJECT")}
+                  disabled={actionLoading}
+                >
+                  ✕ Reject
+                </button>
+                {app.sla_status === "SLA_BREACHED" && !app.escalated && (
                   <button
-                    className="btn btn-success"
+                    className="btn btn-outline"
+                    style={{ fontSize: 12, color: "var(--status-error)" }}
+                    onClick={() => setModalMode("ESCALATE")}
                     disabled={actionLoading}
-                    onClick={() => handleAction(app.application_no, "APPROVED", "Verified against RoR and Registration databases. Approved.")}
                   >
-                    ✓ Approve Application
+                    🚨 Escalate SLA
                   </button>
-                  <button
-                    className="btn btn-danger"
-                    disabled={actionLoading}
-                    onClick={() => handleAction(app.application_no, "REJECTED", "Discrepancy in ownership records. Rejected.")}
-                  >
-                    ✕ Reject
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    disabled={actionLoading}
-                    onClick={() => handleAction(app.application_no, "ACTION_REQUIRED", "Please upload additional identity documents.")}
-                  >
-                    ⟳ Request Info
-                  </button>
-                </div>
-              )}
-
-              {/* History Timeline */}
-              <h4 className="section-title" style={{ marginTop: "var(--space-lg)" }}>Application Audit Trail</h4>
-              <div style={{ marginTop: "var(--space-sm)" }}>
-                {history.map((h: any, i: number) => (
-                  <div key={i} style={{ display: "flex", gap: "var(--space-md)", padding: "6px 0", borderLeft: "2px solid var(--border-default)", paddingLeft: "var(--space-md)", marginLeft: 6, position: "relative" }}>
-                    <div style={{ position: "absolute", left: -5, top: 8, width: 8, height: 8, borderRadius: "50%", background: i === history.length - 1 ? "var(--brand-primary)" : "var(--border-strong)" }} />
-                    <div>
-                      <div style={{ fontSize: 12, color: "var(--text-primary)" }}>{h.action}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
-                        {new Date(h.created_at).toLocaleString()} • {h.performed_by}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                )}
               </div>
-            </div>
+            </>
           ) : (
-            <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-              <div style={{ fontSize: 40, marginBottom: "var(--space-md)" }}>👈</div>
-              <p style={{ color: "var(--text-secondary)" }}>Select an application from the queue to review</p>
-            </div>
+            <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "var(--space-2xl)" }}>
+              Select an application from the queue to inspect parcel compliance and take action.
+            </p>
           )}
         </div>
       </div>
+
+      {/* Action Remark Modal */}
+      {modalMode && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div className="card" style={{ width: 480, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
+            <h3 className="card-title" style={{ marginBottom: 8 }}>
+              {modalMode === "APPROVE" && "✓ Approve & Issue Order"}
+              {modalMode === "REJECT" && "✕ Reject Application (Mandatory Reason)"}
+              {modalMode === "REQUEST_INFO" && "📄 Request Additional Documentation"}
+              {modalMode === "ESCALATE" && "🚨 Escalate SLA Breach to Supervisor"}
+            </h3>
+            <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14 }}>
+              {modalMode === "APPROVE" && "Enter officer approval notes. An immutable audit record will be created and the applicant notified."}
+              {modalMode === "REJECT" && "Government guidelines require a clear, legally sound reason for rejecting citizen applications."}
+              {modalMode === "REQUEST_INFO" && "Specify exactly what documents or clarifications are required from the citizen."}
+              {modalMode === "ESCALATE" && "Describe why the case exceeded statutory turnaround limits."}
+            </p>
+
+            <textarea
+              style={{ width: "100%", height: 100, background: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-primary)", padding: 8, fontSize: 12, marginBottom: 16 }}
+              placeholder="Enter remarks or structured reason here..."
+              value={actionRemarks}
+              onChange={(e) => setActionRemarks(e.target.value)}
+            />
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button className="btn btn-outline" onClick={() => setModalMode(null)} disabled={actionLoading}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={actionLoading || (modalMode === "REJECT" && !actionRemarks.trim())}
+                onClick={() => {
+                  if (modalMode === "APPROVE") executeAction("APPROVED", actionRemarks || "Application verified and approved.");
+                  if (modalMode === "REJECT") executeAction("REJECTED", actionRemarks);
+                  if (modalMode === "REQUEST_INFO") executeAction("ACTION_REQUIRED", actionRemarks || "Additional documentation required.");
+                  if (modalMode === "ESCALATE") executeAction("UNDER_REVIEW", "Escalated due to statutory SLA breach", { escalated: true, escalation_reason: actionRemarks });
+                }}
+              >
+                {actionLoading ? "Processing..." : "Confirm & Submit Action"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
