@@ -32,6 +32,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/admin/intelligence", icon: "🧠", label: "AI & Satellite AI" },
       { href: "/admin/adapters", icon: "🔌", label: "State Adapters" },
+      { href: "/admin/security", icon: "🛡️", label: "Security & Audit" },
       { href: "/admin", icon: "⚙️", label: "Admin Overview" },
       { href: "/admin/import", icon: "📥", label: "Data Import" },
     ],
