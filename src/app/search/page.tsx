@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/lib/security/auth-context";
+import * as Lucide from "lucide-react";
+import { useAuth, getLucideIcon } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
 
 interface SearchResult {
@@ -101,7 +102,7 @@ function SearchContent() {
       <div className="page-header">
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 24 }}>🔍</span>
+            <Lucide.Search size={24} color="var(--text-primary)" />
             <h1 className="page-title">Search Cadastral Land Records</h1>
           </div>
           <p className="page-subtitle">
@@ -110,14 +111,14 @@ function SearchContent() {
         </div>
 
         {/* Role-Based Data Projection Indicator */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(15, 23, 42, 0.8)", border: "1px solid var(--border-color)", padding: "6px 14px", borderRadius: "var(--radius-md)" }}>
-          <span style={{ fontSize: 16 }}>{currentUser.icon}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", border: "1px solid var(--border-color)", padding: "6px 14px", borderRadius: "var(--radius-md)" }}>
+          <span style={{ display: "flex", alignItems: "center" }}>{(() => { const Icon = getLucideIcon(currentUser.icon); return <Icon size={16} />; })()}</span>
           <div style={{ textAlign: "left" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#f8fafc" }}>
               {isOfficer ? "In-Jurisdiction Officer View" : "Public Citizen View"}
             </div>
-            <div style={{ fontSize: 10, color: isOfficer ? "#34d399" : "#38bdf8" }}>
-              {isOfficer ? "✓ Full Statutory Records Unmasked" : "🔒 DPDPA 2023 Masked Projection"}
+            <div style={{ fontSize: 10, color: isOfficer ? "#34d399" : "#38bdf8", display: "flex", alignItems: "center", gap: 4 }}>
+              {isOfficer ? <><Lucide.CheckCircle2 size={12} /> Full Statutory Records Unmasked</> : <><Lucide.Lock size={12} /> DPDPA 2023 Masked Projection</>}
             </div>
           </div>
         </div>
@@ -138,7 +139,7 @@ function SearchContent() {
       {/* Results */}
       {loading && (
         <div style={{ textAlign: "center", padding: "var(--space-2xl)", color: "var(--text-secondary)" }}>
-          <div className="animate-pulse" style={{ fontSize: 24 }}>🔍</div>
+          <div className="animate-pulse"><Lucide.Search size={24} color="var(--brand-primary)" style={{ margin: "0 auto" }} /></div>
           <p style={{ marginTop: 8 }}>Searching cadastral registry across all departments...</p>
         </div>
       )}
@@ -156,7 +157,7 @@ function SearchContent() {
 
           {results.length === 0 ? (
             <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-              <div style={{ fontSize: 32, marginBottom: "var(--space-sm)" }}>🏜️</div>
+              <div style={{ marginBottom: "var(--space-sm)" }}><Lucide.FileQuestion size={32} color="var(--text-muted)" style={{ margin: "0 auto" }} /></div>
               <p style={{ color: "var(--text-secondary)" }}>No cadastral parcels found matching your query</p>
             </div>
           ) : (
@@ -173,14 +174,14 @@ function SearchContent() {
                           {r.ulpin}
                         </span>
                         <span className="badge badge-info" style={{ fontSize: 10 }}>{r.match_type}</span>
-                        {isOfficer && <span className="badge badge-success" style={{ fontSize: 10 }}>● Verified RoR</span>}
+                        {isOfficer && <span className="badge badge-success" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 2 }}><Lucide.ShieldCheck size={10} /> Verified RoR</span>}
                       </div>
 
                       <div style={{ display: "flex", gap: "var(--space-lg)", fontSize: 12, color: "var(--text-secondary)", flexWrap: "wrap", marginTop: 4 }}>
                         <span>Khesra / Survey: <strong style={{ color: "#f8fafc" }}>#{r.survey_number}</strong></span>
-                        <span>Area: <strong style={{ color: "#f8fafc" }}>{Number(r.area).toLocaleString()} m²</strong> ({areaDecimal} dec)</span>
-                        <span>Raiyat: <strong style={{ color: isOfficer ? "#34d399" : "#e2e8f0" }}>{displayName}</strong></span>
-                        <span>Location: <strong style={{ color: "#f8fafc" }}>Arghawa (33), Madhubani</strong></span>
+                        <span>Area: <strong style={{ color: "var(--text-primary)" }}>{Number(r.area).toLocaleString()} m²</strong> ({areaDecimal} dec)</span>
+                        <span>Raiyat: <strong style={{ color: isOfficer ? "var(--status-success)" : "var(--text-primary)" }}>{displayName}</strong></span>
+                        <span>Location: <strong style={{ color: "var(--text-primary)" }}>Arghawa (33), Madhubani</strong></span>
                       </div>
                     </div>
 
@@ -192,7 +193,7 @@ function SearchContent() {
                         Land 360°
                       </Link>
                       <Link href={`/map?survey=${r.survey_number}`} className="btn btn-primary btn-sm">
-                        🗺️ Cadastre
+                        <Lucide.Map size={14} /> Cadastre
                       </Link>
                     </div>
                   </div>
@@ -205,8 +206,8 @@ function SearchContent() {
 
       {!loading && !searched && (
         <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-          <div style={{ fontSize: 40, marginBottom: "var(--space-md)" }}>🔍</div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: "var(--space-sm)", color: "#f8fafc" }}>
+          <div style={{ marginBottom: "var(--space-md)" }}><Lucide.Search size={40} color="var(--brand-primary)" style={{ margin: "0 auto" }} /></div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: "var(--space-sm)", color: "var(--text-primary)" }}>
             Search Across 300 Cadastral Records
           </h3>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", maxWidth: 460, margin: "0 auto", lineHeight: 1.6 }}>

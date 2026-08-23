@@ -7,6 +7,18 @@ import { useAuth } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
 import * as Lucide from "lucide-react";
 
+const getPersonaIcon = (iconName: string) => {
+  switch (iconName) {
+    case "User": return Lucide.User;
+    case "Briefcase": return Lucide.Briefcase;
+    case "FileSignature": return Lucide.FileSignature;
+    case "Ruler": return Lucide.Ruler;
+    case "Landmark": return Lucide.Landmark;
+    case "Shield": return Lucide.Shield;
+    default: return Lucide.User;
+  }
+};
+
 interface StatsData {
   overview: {
     total_parcels: number;
@@ -95,7 +107,7 @@ export default function Dashboard() {
               boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
             }}
           >
-            {currentUser.icon}
+            {(() => { const Icon = getPersonaIcon(currentUser.icon); return <Icon size={28} color="#ffffff" />; })()}
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
