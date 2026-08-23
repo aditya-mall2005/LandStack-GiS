@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
 import apiClient from "@/lib/api-client";
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
@@ -37,6 +38,7 @@ function getSteps(currentStatus: string) {
 
 export default function ApplicationsPage() {
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -97,12 +99,12 @@ export default function ApplicationsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <span style={{ fontSize: 24 }}>{currentUser.role === "CITIZEN" ? "📋" : "👨‍💼"}</span>
             <h1 className="page-title">
-              {currentUser.role === "CITIZEN" ? "My Applications & Status" : `${currentUser.department} Applications Tracking`}
+              {currentUser.role === "CITIZEN" ? t("apps.title") : `${currentUser.department} ${t("apps.title")}`}
             </h1>
           </div>
           <p className="page-subtitle">
             {currentUser.role === "CITIZEN"
-              ? `Track your land mutation, NOC, and RoR verification requests (${currentUser.name})`
+              ? `${t("apps.subtitle")} (${currentUser.name})`
               : `Departmental case queue for ${currentUser.title} (${currentUser.jurisdiction})`}
           </p>
         </div>

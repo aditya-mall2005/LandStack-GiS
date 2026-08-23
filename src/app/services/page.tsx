@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import * as Lucide from "lucide-react";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 const SERVICES = [
   {
@@ -71,12 +72,14 @@ const SERVICES = [
 ];
 
 export default function ServicesPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="app-content animate-in">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Land Services</h1>
-          <p className="page-subtitle">Access all land governance services from a single platform</p>
+          <h1 className="page-title">🏛️ {t("services.title")}</h1>
+          <p className="page-subtitle">{t("services.subtitle")}</p>
         </div>
       </div>
 

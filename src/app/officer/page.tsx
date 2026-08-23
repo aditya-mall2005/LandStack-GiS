@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { calculateSlaStatus } from "@/lib/workflow";
 import { useAuth } from "@/lib/security/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
 import apiClient from "@/lib/api-client";
 import {
   Check,
@@ -40,6 +41,7 @@ const STATUS_MAP: Record<string, { label: string; class: string }> = {
 
 export default function OfficerPortal() {
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedAppNo, setSelectedAppNo] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -188,9 +190,9 @@ export default function OfficerPortal() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <span style={{ fontSize: 24 }}>👨‍💼</span>
-            <h1 className="page-title">Department Officer Portal & Workflow Engine</h1>
+            <h1 className="page-title">{t("officer.title")}</h1>
           </div>
-          <p className="page-subtitle">Multi-department statutory case review, parcel-linked compliance, and immutable audit trailing.</p>
+          <p className="page-subtitle">{t("officer.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-elevated)", border: "1px solid var(--border-default)", padding: "6px 12px", borderRadius: "var(--radius-md)" }}>
@@ -204,10 +206,10 @@ export default function OfficerPortal() {
             </Link>
           </div>
           <Link href="/officer/conflicts" className="btn btn-outline" style={{ fontSize: 12 }}>
-            ⚠️ Conflicts ({3})
+            ⚠️ {t("nav.conflicts")} ({3})
           </Link>
           <Link href="/admin/intelligence" className="btn btn-primary" style={{ fontSize: 12 }}>
-            🧠 AI Intelligence
+            🧠 {t("nav.intelligence")}
           </Link>
         </div>
       </div>
@@ -215,10 +217,10 @@ export default function OfficerPortal() {
       {/* SLA & Workflow Metrics */}
       <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
         {[
-          { icon: "📋", value: pendingCount, label: "Pending Queue", bg: "var(--status-warning-bg)" },
-          { icon: "⏱️", value: applications.filter(a => a.status === "UNDER_REVIEW").length, label: "In Active Review", bg: "var(--status-info-bg)" },
-          { icon: "✅", value: approvedCount, label: "Approved / Certified", bg: "var(--status-success-bg)" },
-          { icon: "🚨", value: breachedCount, label: "SLA Breaches / Escalated", bg: "var(--status-error-bg)" },
+          { icon: "📋", value: pendingCount, label: t("stat.pending_queue"), bg: "var(--status-warning-bg)" },
+          { icon: "⏱️", value: applications.filter(a => a.status === "UNDER_REVIEW").length, label: t("stat.in_review"), bg: "var(--status-info-bg)" },
+          { icon: "✅", value: approvedCount, label: t("stat.approved_certified"), bg: "var(--status-success-bg)" },
+          { icon: "🚨", value: breachedCount, label: t("stat.sla_breaches"), bg: "var(--status-error-bg)" },
         ].map((s) => (
           <div key={s.label} className="stat-card">
             <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
