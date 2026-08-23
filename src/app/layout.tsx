@@ -73,6 +73,28 @@ function Sidebar() {
   );
 }
 
+function AppShellWrapper({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isMapPage = pathname === "/map";
+
+  if (isMapPage) {
+    return (
+      <main style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#0B0F19" }}>
+        <RouteGuard>{children}</RouteGuard>
+      </main>
+    );
+  }
+
+  return (
+    <div className="app-shell">
+      <Sidebar />
+      <main className="app-main">
+        <RouteGuard>{children}</RouteGuard>
+      </main>
+    </div>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -89,12 +111,7 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          <div className="app-shell">
-            <Sidebar />
-            <main className="app-main">
-              <RouteGuard>{children}</RouteGuard>
-            </main>
-          </div>
+          <AppShellWrapper>{children}</AppShellWrapper>
         </AuthProvider>
       </body>
     </html>
