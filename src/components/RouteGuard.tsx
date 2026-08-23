@@ -9,12 +9,12 @@ import apiClient from "@/lib/api-client";
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { currentUser } = useAuth();
+  const { currentUser, isMounted } = useAuth();
   const accessState = checkRouteAccess(pathname, currentUser.role);
 
   useEffect(() => {
     // Log security event for audit trail when access is denied
-    if (!accessState.allowed) {
+    if (isMounted && !accessState.allowed) {
       apiClient.post("/api/v1/security/policy-check", {
         userId: currentUser.id,
         userRole: currentUser.role,
@@ -32,9 +32,9 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         },
       }).catch(() => {});
     }
-  }, [accessState.allowed, pathname, currentUser]);
+  }, [isMounted, accessState.allowed, pathname, currentUser]);
 
-  if (!accessState.allowed) {
+  if (isMounted && !accessState.allowed) {
     return (
       <div className="app-content animate-in" style={{ maxWidth: 840, margin: "40px auto", padding: "0 20px" }}>
         <div

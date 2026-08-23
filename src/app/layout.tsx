@@ -2,15 +2,16 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { AuthProvider, useAuth } from "@/lib/security/auth-context";
+import { AuthProvider, useAuth, DEMO_PERSONAS } from "@/lib/security/auth-context";
 import { getFilteredNavSections } from "@/lib/security/route-guard";
 import { RouteGuard } from "@/components/RouteGuard";
 import "./globals.css";
 
 function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, getInitials } = useAuth();
-  const navSections = getFilteredNavSections(currentUser.role);
+  const { currentUser, getInitials, isMounted } = useAuth();
+  const activeUser = isMounted ? currentUser : DEMO_PERSONAS[0];
+  const navSections = getFilteredNavSections(activeUser.role);
 
   return (
     <aside className="app-sidebar">
@@ -55,14 +56,14 @@ function Sidebar() {
             }}
           >
             <div className="sidebar-avatar" style={{ background: "var(--brand-primary)", color: "#fff", fontWeight: 700 }}>
-              {getInitials(currentUser.name)}
+              {getInitials(activeUser.name)}
             </div>
             <div className="sidebar-user-info" style={{ overflow: "hidden" }}>
               <div className="sidebar-user-name" style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                <span>{currentUser.name}</span>
+                <span>{activeUser.name}</span>
               </div>
               <div className="sidebar-user-role" style={{ fontSize: 11, color: "var(--text-accent)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-                {currentUser.title.split("/")[0].trim()} • Switch ⇄
+                {activeUser.title.split("/")[0].trim()} • Switch ⇄
               </div>
             </div>
           </div>

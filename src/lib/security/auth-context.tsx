@@ -1,13 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useCallback, useSyncExternalStore } from "react";
 import { UserRole, Permission } from "./types";
 import { ROLE_PERMISSIONS } from "./rbac-matrix";
 
 export interface UserPersona {
   id: string;
-  role: UserRole;
   name: string;
+  role: UserRole;
   title: string;
   department: string;
   icon: string;
@@ -23,122 +23,123 @@ export interface UserPersona {
 
 export const DEMO_PERSONAS: UserPersona[] = [
   {
-    id: "user_citizen_01",
-    role: "CITIZEN",
+    id: "CITIZEN_RAMESH",
     name: "Ramesh Kumar",
+    role: "CITIZEN",
     title: "Citizen / Land Owner",
-    department: "Citizen Services",
-    icon: "👨‍🌾",
+    department: "Public Citizen Portal",
+    icon: "🧑‍🌾",
     jurisdiction: "Basopatti, Madhubani (Bihar)",
     stateCode: "BR",
     districtCode: "BR-10",
-    circleCode: "BASOPATTI",
-    description: "View owned parcels, download digital RoR/Khatiyan, track applications, and submit mutation requests.",
-    landingUrl: "/services",
-    email: "ramesh.kumar@bihar.gov.in",
+    circleCode: "Basopatti",
+    description: "Owns survey parcels #1420, #1894, #1648 in Mauza Arghawa (33). Can view own Jamabandi RoR, track mutations, apply for services.",
+    landingUrl: "/",
+    email: "ramesh.kumar@biharbhumi.bihar.gov.in",
     phone: "+91 98765 43210"
   },
   {
-    id: "user_revenue_01",
-    role: "REVENUE_OFFICER",
+    id: "OFFICER_CO_VIKRAM",
     name: "Vikram Singh",
+    role: "REVENUE_OFFICER",
     title: "Revenue Circle Officer (CO)",
-    department: "Revenue & Land Records",
+    department: "Revenue",
     icon: "👨‍💼",
     jurisdiction: "Basopatti Circle, Madhubani",
     stateCode: "BR",
     districtCode: "BR-10",
-    circleCode: "BASOPATTI",
-    description: "Verify land titles, inspect Jamabandi records, approve mutations, and resolve cross-department data conflicts.",
+    circleCode: "Basopatti",
+    description: "Statutory jurisdiction over Mauza Arghawa (33). Inspects Jamabandi RoR records, resolves boundary overlaps, approves/rejects mutations.",
     landingUrl: "/officer",
     email: "co.basopatti@bihar.gov.in",
-    phone: "+91 94310 12345"
+    phone: "+91 94310 11111"
   },
   {
-    id: "user_reg_01",
-    role: "REGISTRATION_OFFICER",
+    id: "OFFICER_REG_PRIYA",
     name: "Priya Sharma",
+    role: "REGISTRATION_OFFICER",
     title: "Sub-Registrar (DSR)",
-    department: "Registration & Stamps",
+    department: "Registration",
     icon: "📝",
     jurisdiction: "Madhubani Registration District",
     stateCode: "BR",
     districtCode: "BR-10",
-    circleCode: "MADHUBANI_REG",
-    description: "Review registered sale deeds, verify bank mortgage charges, and issue non-encumbrance certificates.",
+    circleCode: "ALL",
+    description: "Registers sale deeds, mortgage deeds, issues Non-Encumbrance Certificates (NEC), logs stamp duty transactions.",
     landingUrl: "/officer?dept=Registration",
-    email: "dsr.madhubani@bihar.gov.in",
-    phone: "+91 94310 67890"
+    email: "subreg.madhubani@bihar.gov.in",
+    phone: "+91 94310 33333"
   },
   {
-    id: "user_plan_01",
-    role: "PLANNING_OFFICER",
+    id: "OFFICER_PLAN_ANAND",
     name: "Anand Verma",
+    role: "PLANNING_OFFICER",
     title: "Town Planning Officer",
-    department: "Urban Planning & Development",
+    department: "Planning",
     icon: "📐",
-    jurisdiction: "Madhubani Planning Area 2035",
+    jurisdiction: "Madhubani Planning Area",
     stateCode: "BR",
     districtCode: "BR-10",
-    circleCode: "MADHUBANI_PLAN",
-    description: "Enforce Master Plan 2035 zoning, check Floor Area Ratio (FAR), and evaluate environmental buffer compliance.",
+    circleCode: "ALL",
+    description: "Enforces Master Plan 2035 zoning regulations, evaluates FAR & building setbacks, inspects environmental buffer zones.",
     landingUrl: "/officer?dept=Planning",
     email: "tpo.madhubani@bihar.gov.in",
-    phone: "+91 94310 54321"
+    phone: "+91 94310 44444"
   },
   {
-    id: "user_tax_01",
-    role: "TAX_OFFICER",
+    id: "OFFICER_TAX_SUNITA",
     name: "Sunita Rao",
+    role: "TAX_OFFICER",
     title: "Executive Officer (Nagar Panchayat)",
-    department: "Municipal Administration & Tax",
+    department: "Municipality",
     icon: "🏛️",
-    jurisdiction: "Basopatti Nagar Panchayat",
+    jurisdiction: "Nagar Panchayat Basopatti",
     stateCode: "BR",
     districtCode: "BR-10",
-    circleCode: "BASOPATTI_MUNI",
-    description: "Sanction residential/commercial building permits and review property tax assessments & arrears.",
-    landingUrl: "/officer?dept=Taxation",
+    circleCode: "Basopatti",
+    description: "Manages property tax assessments, GIS built-up footprint evaluations, demand notice issuance, and arrears collection.",
+    landingUrl: "/officer?dept=Municipality",
     email: "eo.basopatti@bihar.gov.in",
-    phone: "+91 94310 98765"
+    phone: "+91 94310 55555"
   },
   {
-    id: "user_admin_01",
-    role: "ADMIN",
+    id: "ADMIN_STATE_RAJESHWAR",
     name: "Rajeshwar Jha",
-    title: "State Nodal Officer / Admin",
-    department: "Digital Land Governance Mission",
+    role: "ADMIN",
+    title: "State Nodal IT Administrator",
+    department: "Revenue & Land Reforms Dept",
     icon: "⚙️",
-    jurisdiction: "Pan-India Interoperability Hub",
+    jurisdiction: "State of Bihar (State-wide)",
     stateCode: "BR",
     districtCode: "ALL",
     circleCode: "ALL",
-    description: "Configure State Adapters, manage RBAC security, and audit system-wide data quality & threat radars.",
-    landingUrl: "/admin/security",
+    description: "Configures heterogeneous State Adapters, oversees security policy ABAC rules, imports spatial shapefiles.",
+    landingUrl: "/admin",
     email: "nodal.landstack@bihar.gov.in",
-    phone: "+91 94310 11111"
+    phone: "+91 94310 00000"
   },
   {
-    id: "user_auditor_01",
-    role: "AUDITOR",
+    id: "AUDITOR_CAG_MEENAKSHI",
     name: "Meenakshi Sundaram",
+    role: "AUDITOR",
     title: "Principal Auditor (C&AG / Vigilance)",
-    department: "Auditing & Vigilance",
+    department: "Audit & Vigilance Directorate",
     icon: "🛡️",
-    jurisdiction: "State-Wide Audit Jurisdiction",
-    stateCode: "BR",
+    jurisdiction: "Union of India (National Scope)",
+    stateCode: "ALL",
     districtCode: "ALL",
     circleCode: "ALL",
-    description: "Inspect immutable tamper-evident SHA-256 audit logs, track DPDPA 2023 consent records, and verify officer actions.",
+    description: "Inspects immutable tamper-evident SHA-256 audit logs, tracks DPDPA 2023 consent records, and verifies officer actions.",
     landingUrl: "/admin/security",
     email: "auditor.vigilance@cag.gov.in",
     phone: "+91 94310 22222"
   }
 ];
 
-interface AuthContextType {
+export interface AuthContextType {
   currentUser: UserPersona;
   allPersonas: UserPersona[];
+  isMounted: boolean;
   loginAs: (roleOrId: string) => void;
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
@@ -150,45 +151,66 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_STORAGE_KEY = "landstack_active_user";
 const AUTH_EVENT_NAME = "landstack_auth_change";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Initialize from localStorage or default to Revenue Officer Vikram Singh
-  const [currentUser, setCurrentUser] = useState<UserPersona>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const match = DEMO_PERSONAS.find((p) => p.id === parsed.id || p.role === parsed.role);
-          if (match) return match;
-        }
-      } catch (e) {
-        console.warn("Auth initialization note:", e);
+function subscribeToAuth(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(AUTH_EVENT_NAME, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(AUTH_EVENT_NAME, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+let cachedUserJson = "";
+let cachedUserPersona: UserPersona = DEMO_PERSONAS[0];
+
+function getAuthSnapshot(): UserPersona {
+  if (typeof window === "undefined") return DEMO_PERSONAS[0];
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("landstack_user");
+    if (raw && raw !== cachedUserJson) {
+      cachedUserJson = raw;
+      const parsed = JSON.parse(raw);
+      const match = DEMO_PERSONAS.find((p) => p.id === parsed.id || p.role === parsed.role);
+      if (match) {
+        cachedUserPersona = match;
       }
+    } else if (!raw) {
+      cachedUserPersona = DEMO_PERSONAS[0];
     }
-    return DEMO_PERSONAS[1];
-  });
+  } catch {}
+  return cachedUserPersona;
+}
 
-  useEffect(() => {
-    const handleAuthEvent = (e: any) => {
-      if (e.detail) {
-        setCurrentUser(e.detail);
-      }
-    };
+function getAuthServerSnapshot(): UserPersona {
+  return DEMO_PERSONAS[0];
+}
 
-    window.addEventListener(AUTH_EVENT_NAME, handleAuthEvent);
-    return () => window.removeEventListener(AUTH_EVENT_NAME, handleAuthEvent);
-  }, []);
+function subscribeToMounted() {
+  return () => {};
+}
+function getMountedSnapshot() {
+  return true;
+}
+function getMountedServerSnapshot() {
+  return false;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const currentUser = useSyncExternalStore(subscribeToAuth, getAuthSnapshot, getAuthServerSnapshot);
+  const isMounted = useSyncExternalStore(subscribeToMounted, getMountedSnapshot, getMountedServerSnapshot);
 
   const loginAs = useCallback((roleOrId: string) => {
     const match = DEMO_PERSONAS.find(
       (p) => p.id === roleOrId || p.role === roleOrId
     ) || DEMO_PERSONAS[0];
 
-    setCurrentUser(match);
     try {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(match));
       localStorage.setItem("landstack_user", JSON.stringify(match));
       document.cookie = `landstack_role=${match.role}; path=/; max-age=86400; SameSite=Lax`;
+      cachedUserJson = JSON.stringify(match);
+      cachedUserPersona = match;
 
       // Broadcast event to other listeners
       window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: match }));
@@ -203,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loginAs]);
 
   const hasPermission = useCallback((permission: Permission): boolean => {
-    const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+    const allowed = (ROLE_PERMISSIONS as Record<string, Permission[]>)[currentUser.role] || [];
     return allowed.includes(permission);
   }, [currentUser.role]);
 
@@ -221,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentUser,
         allPersonas: DEMO_PERSONAS,
+        isMounted,
         loginAs,
         logout,
         hasPermission,
