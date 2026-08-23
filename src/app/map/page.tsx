@@ -943,7 +943,8 @@ function MapContent() {
               bottom: isMobile ? 0 : "auto",
               left: isMobile ? 0 : "auto",
               right: 0,
-              maxHeight: isMobile ? "75vh" : "100%",
+              height: isMobile ? "68vh" : "100%",
+              maxHeight: isMobile ? "68vh" : "100%",
               background: "#ffffff",
               borderLeft: isMobile ? "none" : "1px solid #e2e8f0",
               borderTop: isMobile ? "1px solid #cbd5e1" : "none",
@@ -952,7 +953,7 @@ function MapContent() {
               zIndex: 40,
               display: "flex",
               flexDirection: "column",
-              overflowY: "auto",
+              overflow: "hidden",
               boxShadow: isMobile ? "0 -8px 30px rgba(0,0,0,0.2)" : "-4px 0 24px rgba(0,0,0,0.08)",
             }}
           >
@@ -967,8 +968,8 @@ function MapContent() {
             ) : selectedParcel ? (
               <>
                 {/* Header */}
-                <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid #e2e8f0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ padding: "10px 16px 8px", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", color: "#0f172a", textTransform: "uppercase" }}>PARCEL DETAILS</span>
                       {conflicts.length > 0 && (
@@ -994,40 +995,54 @@ function MapContent() {
                   </div>
 
                   {/* Top Metadata Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 8, background: "#f8fafc", padding: 10, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 8, background: "#f8fafc", padding: "8px 10px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                     <div>
                       <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>ULPIN</div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#0284c7", fontFamily: "monospace" }}>{p?.ulpin || `IN-BR-PTN-000${p?.survey_number || "1051"}`}</div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Area</div>
+                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 4 }}>Area</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#0f172a" }}>{areaAcres} Acre | {areaSqm} sq.m.</div>
                     </div>
                     <div>
                       <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Survey No.</div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>P-{p?.survey_number || "1051"}</div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Village</div>
+                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 4 }}>Village</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#0f172a" }}>Mauza Arghawa (33)</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Tabs Bar */}
-                <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", padding: "0 16px", overflowX: "auto" }}>
+                <div
+                  className="no-scrollbar"
+                  style={{
+                    display: "flex",
+                    borderBottom: "1px solid #e2e8f0",
+                    padding: "0 8px",
+                    background: "#ffffff",
+                    flexShrink: 0,
+                    overflowX: "auto",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                  }}
+                >
                   {(["overview", "ownership", "documents", "history"] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       style={{
+                        flex: 1,
+                        textAlign: "center",
                         background: "transparent",
                         border: "none",
                         borderBottom: activeTab === tab ? "2px solid #0284c7" : "2px solid transparent",
                         color: activeTab === tab ? "#0284c7" : "#64748b",
-                        padding: "8px 10px",
-                        fontSize: 11,
+                        padding: "8px 4px",
+                        fontSize: 12,
                         fontWeight: activeTab === tab ? 700 : 500,
                         cursor: "pointer",
                         textTransform: "capitalize",
-                        marginRight: 4,
                         whiteSpace: "nowrap",
+                        transition: "all 0.15s ease",
                       }}
                     >
                       {tab}

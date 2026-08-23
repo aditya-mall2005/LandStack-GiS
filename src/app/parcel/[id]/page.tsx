@@ -163,7 +163,7 @@ export default function ParcelPage() {
       )}
 
       {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: "var(--space-lg)", display: "flex", overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 4 }}>
+      <div className="tabs no-scrollbar" style={{ marginBottom: "var(--space-lg)", display: "flex", overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 0, scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
