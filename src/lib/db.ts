@@ -3,25 +3,41 @@
  * Uses Supabase-hosted PostgreSQL with PostGIS
  */
 
-import { Pool, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
 
-let pool: Pool | null = null;
+declare global {
+  // eslint-disable-next-line no-var
+  var postgresPool: Pool | undefined;
+}
 
 export function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
+  if (!globalThis.postgresPool) {
+    globalThis.postgresPool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      max: 4,
+      idleTimeoutMillis: 2000,
+      connectionTimeoutMillis: 8000,
     });
 
-    pool.on('error', (err: Error) => {
+    globalThis.postgresPool.on('error', (err: Error) => {
       console.error('[LandStack DB] Unexpected error on idle client:', err);
     });
   }
-  return pool;
+  return globalThis.postgresPool;
+}
+
+/**
+ * Run operations within a single dedicated client connection
+ */
+export async function withClient<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const p = getPool();
+  const client = await p.connect();
+  try {
+    return await fn(client);
+  } finally {
+    client.release();
+  }
 }
 
 /**
