@@ -1176,14 +1176,16 @@ a:hover { text-decoration: underline; }
 @media (max-width: 768px) {
   .language-dropdown-menu {
     position: fixed !important;
-    top: 56px !important;
-    right: 12px !important;
-    left: auto !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
     bottom: auto !important;
-    width: 250px !important;
-    max-width: calc(100vw - 24px) !important;
-    z-index: 2100 !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2) !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: 80vh !important;
+    z-index: 2200 !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35) !important;
   }
 }
 

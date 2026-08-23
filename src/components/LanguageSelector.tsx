@@ -146,11 +146,23 @@ export function LanguageSelector({ variant = "compact", className = "" }: Langua
         </div>
       )}
 
-      {/* Mobile Backdrop when open */}
+      {/* Mobile / Modal Backdrop when open */}
       {isOpen && (
         <div
           className="sidebar-backdrop active"
-          style={{ zIndex: 2050, background: "rgba(15, 23, 42, 0.25)" }}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 2150,
+            background: "rgba(15, 23, 42, 0.4)",
+            backdropFilter: "blur(2px)",
+            WebkitBackdropFilter: "blur(2px)",
+          }}
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
