@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { AuthProvider, useAuth, DEMO_PERSONAS } from "@/lib/security/auth-context";
+import { AuthProvider, useAuth, DEMO_PERSONAS, getLucideIcon } from "@/lib/security/auth-context";
 import { getFilteredNavSections } from "@/lib/security/route-guard";
 import { RouteGuard } from "@/components/RouteGuard";
+import * as Lucide from "lucide-react";
 import "./globals.css";
 
 function Sidebar() {
@@ -16,28 +17,28 @@ function Sidebar() {
   return (
     <aside className="app-sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">🏛</div>
-        <span className="sidebar-logo-text">LANDSTACK</span>
-        <span className="sidebar-logo-badge">SIH</span>
+        <span className="sidebar-logo-text" style={{ color: "var(--brand-primary)" }}>SIH 2026</span>
       </div>
 
       <nav className="sidebar-nav">
         {navSections.map((section) => (
           <div key={section.label} className="sidebar-section">
             <div className="sidebar-section-label">{section.label}</div>
-            {section.items.map((item) => (
+            {section.items.map((item) => {
+              const IconComponent = getLucideIcon(item.icon);
+              return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`sidebar-link ${pathname === item.href ? "active" : ""}`}
               >
-                <span className="sidebar-link-icon">{item.icon}</span>
+                <span className="sidebar-link-icon"><IconComponent size={18} /></span>
                 {item.label}
                 {item.badge && (
                   <span className="sidebar-link-badge">{item.badge}</span>
                 )}
               </Link>
-            ))}
+            )})}
           </div>
         ))}
       </nav>
@@ -49,8 +50,8 @@ function Sidebar() {
             style={{
               cursor: "pointer",
               transition: "background 0.2s",
-              background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "var(--bg-input)",
+              border: "1px solid var(--border-default)",
               borderRadius: "var(--radius-md)",
               padding: "10px",
             }}
@@ -76,11 +77,20 @@ function Sidebar() {
 function AppShellWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMapPage = pathname === "/map";
+  const isLoginPage = pathname === "/login";
+
+  if (isMapPage || isLoginPage) {
+    return (
+      <main style={{ width: "100vw", height: "100vh", overflow: isMapPage ? "hidden" : "auto", background: isMapPage ? "#0B0F19" : "var(--bg-app)" }}>
+        <RouteGuard>{children}</RouteGuard>
+      </main>
+    );
+  }
 
   return (
     <div className="app-shell">
       <Sidebar />
-      <main className="app-main" style={isMapPage ? { padding: 0, height: "100vh", overflow: "hidden", maxWidth: "100%" } : undefined}>
+      <main className="app-main">
         <RouteGuard>{children}</RouteGuard>
       </main>
     </div>

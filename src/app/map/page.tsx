@@ -7,6 +7,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "@/lib/api-client";
 import { useAuth } from "@/lib/security/auth-context";
+import { Map as MapIcon, Search, Layers, Zap, Bell, User, X, Loader2, AlertCircle, TriangleAlert, AlertTriangle, Info, Download, HelpCircle, Clock, Hammer, Scale, FileWarning, Crosshair } from "lucide-react";
 
 // Configure worker URL for Next.js Turbopack compatibility
 if (typeof window !== "undefined") {
@@ -77,14 +78,39 @@ const BASEMAP_DEFINITIONS: Record<string, any> = {
         maxzoom: 20
       }
     ]
+  },
+  voyager: {
+    version: 8,
+    name: "Streets",
+    sources: {
+      "osm-base": {
+        type: "raster",
+        tiles: [
+          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        ],
+        tileSize: 256,
+        attribution: "&copy; OpenStreetMap contributors"
+      }
+    },
+    layers: [
+      {
+        id: "base-tiles",
+        type: "raster",
+        source: "osm-base",
+        minzoom: 0,
+        maxzoom: 19
+      }
+    ]
   }
 };
 
 const BASE_LAYERS_CONFIG = [
   { id: "parcels", label: "Cadastral Parcels", defaultChecked: true },
-  { id: "roads", label: "Roads", defaultChecked: false, color: "#f8fafc" },
+  { id: "roads", label: "Roads", defaultChecked: false },
   { id: "satellite-layer", label: "Satellite Imagery", defaultChecked: true },
-  { id: "village-boundary", label: "Village Boundary", defaultChecked: false, color: "#facc15" },
+  { id: "village-boundary", label: "Village Boundary", defaultChecked: false },
 ];
 
 const GOVERNANCE_LAYERS_CONFIG = [
@@ -95,6 +121,14 @@ const GOVERNANCE_LAYERS_CONFIG = [
   { id: "disputes", label: "Disputes", defaultChecked: false, color: "#EF4444" },
   { id: "property-tax", label: "Property Tax", defaultChecked: false, color: "#10B981" },
   { id: "utilities", label: "Utilities", defaultChecked: false, color: "#6366F1" },
+];
+
+const ISSUE_STATS = [
+  { id: "OWNERSHIP_CONFLICT", label: "Ownership Conflict", count: 4, icon: <AlertCircle size={12} />, color: "#ef4444" },
+  { id: "ENCROACHMENT", label: "Encroachment", count: 3, icon: <AlertTriangle size={12} />, color: "#f97316" },
+  { id: "UNREGISTERED_LAND", label: "Unregistered Land", count: 2, icon: <Info size={12} />, color: "#eab308" },
+  { id: "LAND_USE_VIOLATION", label: "Land Use Violation", count: 1, icon: <HelpCircle size={12} />, color: "#a855f7" },
+  { id: "TAX_PENDING", label: "Tax Pending", count: 1, icon: <Clock size={12} />, color: "#3b82f6" },
 ];
 
 function createConflictStripeImage(): ImageData | null {
@@ -125,10 +159,8 @@ function MapContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
-  const layerPopupRef = useRef<maplibregl.Popup | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const cachedGeoJson = useRef<any>(null);
-  const cachedSpatialLayers = useRef<Record<string, any>>({});
 
   // States
   const [selectedParcel, setSelectedParcel] = useState<any>(null);
@@ -138,6 +170,7 @@ function MapContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [selectedIssueFilter, setSelectedIssueFilter] = useState<string | null>(null);
   const [activeBaseLayers, setActiveBaseLayers] = useState<Record<string, boolean>>({
     parcels: true,
     roads: false,
@@ -159,16 +192,6 @@ function MapContent() {
     selectedParcelRef.current = selectedParcel;
   }, [selectedParcel]);
 
-  const activeGovLayersRef = useRef(activeGovLayers);
-  useEffect(() => {
-    activeGovLayersRef.current = activeGovLayers;
-  }, [activeGovLayers]);
-
-  const activeBaseLayersRef = useRef(activeBaseLayers);
-  useEffect(() => {
-    activeBaseLayersRef.current = activeBaseLayers;
-  }, [activeBaseLayers]);
-
   const inspectParcel = useCallback(async (parcelId: string) => {
     const map = mapRef.current;
     if (map && map.getLayer("parcels-highlight")) {
@@ -186,39 +209,59 @@ function MapContent() {
     }
   }, []);
 
-  // Render issue markers
+  // Add issue markers on map canvas
   const renderIssueMarkers = useCallback((map: maplibregl.Map, features: any[]) => {
+    // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     features.forEach((f) => {
       const p = f.properties;
       if (!p.issue_type) return;
+      if (selectedIssueFilter && p.issue_type !== selectedIssueFilter) return;
 
       const coords = p.centroid || f.geometry?.coordinates?.[0]?.[0];
       if (!coords || !Array.isArray(coords)) return;
 
       const el = document.createElement("div");
-      el.className = "map-issue-marker";
-      el.style.width = "26px";
-      el.style.height = "26px";
-      el.style.borderRadius = "50%";
-      el.style.background = p.issue_color || "#ef4444";
-      el.style.border = "2px solid #ffffff";
-      el.style.boxShadow = `0 0 12px ${p.issue_color || "#ef4444"}`;
-      el.style.display = "flex";
-      el.style.alignItems = "center";
-      el.style.justifyContent = "center";
-      el.style.cursor = "pointer";
-      el.style.fontSize = "13px";
-      el.style.transition = "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)";
-      el.innerHTML = p.issue_icon || "⚠️";
+      el.className = "map-issue-marker-container";
+      
+      const dot = document.createElement("div");
+      dot.className = "map-issue-marker";
+      dot.style.width = "26px";
+      dot.style.height = "26px";
+      dot.style.borderRadius = "50%";
+      dot.style.background = p.issue_color || "#ef4444";
+      dot.style.border = "2px solid #ffffff";
+      dot.style.boxShadow = `0 0 12px ${p.issue_color || "#ef4444"}`;
+      dot.style.display = "flex";
+      dot.style.alignItems = "center";
+      dot.style.justifyContent = "center";
+      dot.style.cursor = "pointer";
+      dot.style.fontSize = "13px";
+      dot.style.transition = "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)";
+      let iconSvg = "";
+      if (p.issue_type === "OWNERSHIP_CONFLICT") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+      } else if (p.issue_type === "DISPUTE") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+      } else if (p.issue_type === "BUILDING_WITHOUT_PERMIT") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+      } else if (p.issue_type === "TAX_PENDING") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+      } else {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+      }
+      dot.innerHTML = iconSvg;
+      dot.style.color = "#ffffff";
+
+      el.appendChild(dot);
 
       el.addEventListener("mouseenter", () => {
-        el.style.transform = "scale(1.35)";
+        dot.style.transform = "scale(1.35)";
       });
       el.addEventListener("mouseleave", () => {
-        el.style.transform = "scale(1)";
+        dot.style.transform = "scale(1)";
       });
       el.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -231,104 +274,7 @@ function MapContent() {
 
       markersRef.current.push(marker);
     });
-  }, [inspectParcel]);
-
-  // Load a spatial base/governance layer onto the map
-  const loadSpatialLayer = useCallback(async (map: maplibregl.Map, layerId: string, color = "#FFA726") => {
-    if (!map) return;
-    const sourceId = `layer-${layerId}`;
-
-    try {
-      let geojson = cachedSpatialLayers.current[layerId];
-      if (!geojson) {
-        const res = await apiClient.get(`/api/v1/layers/${layerId}`);
-        geojson = res.data;
-        cachedSpatialLayers.current[layerId] = geojson;
-      }
-
-      if (!map.getSource(sourceId)) {
-        map.addSource(sourceId, { type: "geojson", data: geojson });
-      }
-
-      const beforeLayer = map.getLayer("parcels-fill") ? "parcels-fill" : undefined;
-
-      // Handle polygon fill
-      if (!map.getLayer(`${sourceId}-fill`)) {
-        map.addLayer({
-          id: `${sourceId}-fill`,
-          type: "fill",
-          source: sourceId,
-          paint: {
-            "fill-color": color,
-            "fill-opacity": layerId === "village-boundary" ? 0.08 : 0.38,
-          },
-        }, beforeLayer);
-      }
-
-      // Handle outline/lines
-      if (!map.getLayer(`${sourceId}-outline`)) {
-        map.addLayer({
-          id: `${sourceId}-outline`,
-          type: "line",
-          source: sourceId,
-          paint: {
-            "line-color": color,
-            "line-width": layerId === "village-boundary" ? 3 : 2,
-            "line-dasharray": layerId === "village-boundary" ? [4, 2] : [2, 1],
-            "line-opacity": 0.9,
-          },
-        });
-      }
-
-      // Interactive hover tooltip for governance layers
-      (map as any).off("mousemove", `${sourceId}-fill`);
-      (map as any).on("mousemove", `${sourceId}-fill`, (e: any) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        const pr = f.properties || {};
-        if (layerPopupRef.current) layerPopupRef.current.remove();
-
-        let title = layerId.replace("-", " ").toUpperCase();
-        let subtitle = pr.zone_name || pr.village_name || pr.applicant || pr.institution || pr.court || pr.road_name || pr.utility_name || "Layer Area";
-
-        layerPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
-          .setLngLat(e.lngLat)
-          .setHTML(`
-            <div style="font-family:Inter,sans-serif;font-size:11px;padding:4px 8px;background:#0B0F19;color:#f8fafc;border-radius:6px;border:1px solid ${color}">
-              <div style="font-weight:700;color:${color}">${title}</div>
-              <div style="color:#e2e8f0;font-size:10px;margin-top:2px">${subtitle}</div>
-            </div>
-          `)
-          .addTo(map);
-      });
-
-      (map as any).off("mouseleave", `${sourceId}-fill`);
-      (map as any).on("mouseleave", `${sourceId}-fill`, () => {
-        if (layerPopupRef.current) {
-          layerPopupRef.current.remove();
-          layerPopupRef.current = null;
-        }
-      });
-    } catch (err) {
-      console.warn(`Layer ${layerId} notice:`, err);
-    }
-  }, []);
-
-  const removeSpatialLayer = useCallback((map: maplibregl.Map, layerId: string) => {
-    if (!map) return;
-    const sourceId = `layer-${layerId}`;
-    try {
-      if (layerPopupRef.current) {
-        layerPopupRef.current.remove();
-        layerPopupRef.current = null;
-      }
-      if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
-      if (map.getLayer(`${sourceId}-outline`)) map.removeLayer(`${sourceId}-outline`);
-      if (map.getSource(sourceId)) map.removeSource(sourceId);
-    } catch (err) {
-      console.warn(`Error removing ${layerId}:`, err);
-    }
-  }, []);
+  }, [selectedIssueFilter, inspectParcel]);
 
   const setupParcelLayers = useCallback((map: maplibregl.Map, initialData?: any) => {
     if (!map) return;
@@ -348,7 +294,7 @@ function MapContent() {
       (map.getSource("parcels") as maplibregl.GeoJSONSource).setData(initialData);
     }
 
-    const parcelsVisible = activeBaseLayersRef.current.parcels ? "visible" : "none";
+    const parcelsVisible = activeBaseLayers.parcels ? "visible" : "none";
 
     // 1. Base Fill Layer
     if (!map.getLayer("parcels-fill")) {
@@ -372,7 +318,7 @@ function MapContent() {
             "Wasteland", LAND_TYPE_COLORS.Wasteland,
             "#64748b"
           ],
-          "fill-opacity": 0.42,
+          "fill-opacity": 0.1,
         },
       });
     }
@@ -446,7 +392,7 @@ function MapContent() {
       });
     }
 
-    // Hover Tooltip
+    // Interactive Hover Tooltip
     (map as any).off("mousemove", "parcels-fill");
     (map as any).on("mousemove", "parcels-fill", (e: any) => {
       map.getCanvas().style.cursor = "pointer";
@@ -457,12 +403,12 @@ function MapContent() {
       popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
         .setLngLat(e.lngLat)
         .setHTML(`
-          <div style="font-family:Inter,sans-serif;font-size:12px;line-height:1.5;padding:2px 4px;background:#0b0f19;color:#f8fafc;border-radius:6px">
-            <div style="font-weight:700;color:#38bdf8;font-family:monospace;font-size:11px">${pr.ulpin || pr.display_label || ""}</div>
-            <div style="color:#e2e8f0;font-size:11px">Survey: <strong>${pr.survey_number || "—"}</strong></div>
-            <div style="color:#94a3b8;font-size:10px">Area: ${(Number(pr.area || 0) / 4046.86).toFixed(2)} Acre (${Number(pr.area || 0).toFixed(0)} sq.m.)</div>
-            <div style="display:inline-block;padding:2px 8px;border-radius:12px;background:${LAND_TYPE_COLORS[pr.land_type] || "#3b82f6"}33;color:${LAND_TYPE_COLORS[pr.land_type] || "#38bdf8"};border:1px solid ${LAND_TYPE_COLORS[pr.land_type] || "#38bdf8"};font-size:10px;margin-top:4px;font-weight:600">${pr.land_type || "Land"}</div>
-            ${pr.has_conflict ? '<div style="color:#ef4444;font-size:10px;margin-top:4px;font-weight:700">⚠️ Active Conflict / Dispute</div>' : ''}
+          <div style="font-family:Inter,sans-serif;font-size:12px;line-height:1.5;padding:4px 8px;background:var(--bg-card);color:var(--text-primary);border-radius:6px;box-shadow:var(--shadow-md);border:1px solid var(--border-default)">
+            <div style="font-weight:700;color:var(--text-accent);font-family:monospace;font-size:11px">${pr.ulpin || pr.display_label || ""}</div>
+            <div style="color:var(--text-primary);font-size:11px">Survey: <strong>${pr.survey_number || "—"}</strong></div>
+            <div style="color:var(--text-secondary);font-size:10px">Area: ${(Number(pr.area || 0) / 4046.86).toFixed(2)} Acre (${Number(pr.area || 0).toFixed(0)} sq.m.)</div>
+            <div style="display:inline-block;padding:2px 8px;border-radius:12px;background:${LAND_TYPE_COLORS[pr.land_type] || "#3b82f6"}22;color:${LAND_TYPE_COLORS[pr.land_type] || "#3b82f6"};border:1px solid ${LAND_TYPE_COLORS[pr.land_type] || "#3b82f6"}66;font-size:10px;margin-top:4px;font-weight:600">${pr.land_type || "Land"}</div>
+            ${pr.has_conflict ? '<div style="color:var(--status-error);font-size:10px;margin-top:4px;font-weight:700">⚠️ Active Conflict / Dispute</div>' : ''}
           </div>
         `)
         .addTo(map);
@@ -484,7 +430,7 @@ function MapContent() {
       if (!f?.properties?.parcel_id) return;
       inspectParcel(f.properties.parcel_id);
     });
-  }, [inspectParcel]);
+  }, [activeBaseLayers.parcels, inspectParcel]);
 
   const loadParcels = useCallback(async (map: maplibregl.Map) => {
     try {
@@ -504,28 +450,12 @@ function MapContent() {
           inspectParcel(target.properties.parcel_id);
         }
       }
-
-      // Re-apply enabled governance and base layers
-      Object.entries(activeGovLayersRef.current).forEach(([layerId, enabled]) => {
-        if (enabled) {
-          const cfg = GOVERNANCE_LAYERS_CONFIG.find((l) => l.id === layerId);
-          loadSpatialLayer(map, layerId, cfg?.color);
-        }
-      });
-
-      if (activeBaseLayersRef.current["village-boundary"]) {
-        loadSpatialLayer(map, "village-boundary", "#facc15");
-      }
-      if (activeBaseLayersRef.current["roads"]) {
-        loadSpatialLayer(map, "roads", "#f8fafc");
-      }
-
       return geojson;
     } catch (err) {
       console.error("Failed to load parcels:", err);
       return null;
     }
-  }, [setupParcelLayers, renderIssueMarkers, inspectParcel, loadSpatialLayer]);
+  }, [setupParcelLayers, renderIssueMarkers, inspectParcel]);
 
   // Search handler
   const handleSearch = useCallback(async (q: string) => {
@@ -561,6 +491,8 @@ function MapContent() {
       style: BASEMAP_DEFINITIONS.satellite,
       center: [86.120, 26.360],
       zoom: 15.2,
+      pitch: 0,
+      bearing: 0,
     });
 
     map.on("load", async () => {
@@ -583,62 +515,42 @@ function MapContent() {
     };
   }, [loadParcels, searchParams, inspectParcel]);
 
-  // Toggle base layer
-  const toggleBaseLayer = (layerId: string, checked: boolean) => {
-    const updated = { ...activeBaseLayers, [layerId]: checked };
-    setActiveBaseLayers(updated);
+  // Update issue markers when filter changes
+  useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-
-    if (layerId === "parcels") {
-      const vis = checked ? "visible" : "none";
-      ["parcels-fill", "parcels-conflict-hatch", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
-        if (map.getLayer(lyr)) map.setLayoutProperty(lyr, "visibility", vis);
-      });
-    } else if (layerId === "satellite-layer") {
-      map.setStyle(checked ? BASEMAP_DEFINITIONS.satellite : BASEMAP_DEFINITIONS.dark);
-      map.once("styledata", () => {
-        loadParcels(map);
-      });
-    } else if (layerId === "roads") {
-      if (checked) loadSpatialLayer(map, "roads", "#f8fafc");
-      else removeSpatialLayer(map, "roads");
-    } else if (layerId === "village-boundary") {
-      if (checked) loadSpatialLayer(map, "village-boundary", "#facc15");
-      else removeSpatialLayer(map, "village-boundary");
+    if (map && cachedGeoJson.current) {
+      renderIssueMarkers(map, cachedGeoJson.current.features || []);
     }
-  };
-
-  // Toggle governance layer
-  const toggleGovernanceLayer = (layerId: string, checked: boolean) => {
-    const updated = { ...activeGovLayers, [layerId]: checked };
-    setActiveGovLayers(updated);
-    const map = mapRef.current;
-    if (!map) return;
-
-    const cfg = GOVERNANCE_LAYERS_CONFIG.find((l) => l.id === layerId);
-    if (checked) {
-      loadSpatialLayer(map, layerId, cfg?.color || "#FFA726");
-    } else {
-      removeSpatialLayer(map, layerId);
-    }
-  };
+  }, [selectedIssueFilter, renderIssueMarkers]);
 
   // Selected Parcel fields
   const p = selectedParcel?.parcel;
   const ownership = selectedParcel?.ownership?.[0];
+  const conflicts = selectedParcel?.conflicts || [];
+  const disputes = selectedParcel?.disputes || [];
+  const tax = selectedParcel?.tax?.[0];
+  const buildingPerms = selectedParcel?.building_permissions?.[0];
+
   const areaAcres = p?.area ? (Number(p.area) / 4046.86).toFixed(2) : "0.48";
   const areaSqm = p?.area ? Number(p.area).toFixed(2) : "1941.00";
   const coordsText = p?.centroid_lat ? `${Number(p.centroid_lat).toFixed(4)}, ${Number(p.centroid_lng).toFixed(4)}` : "25.6245, 85.1378";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", background: "#0B0F19", color: "#F8FAFC", overflow: "hidden", fontFamily: "Inter, -apple-system, sans-serif" }}>
-      {/* 1. Map Top Toolbar */}
-      <header style={{ height: 54, background: "#0B0F19", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 30 }}>
-        {/* Search Input */}
-        <div style={{ flex: 1, maxWidth: 500, position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", background: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: 8, padding: "6px 12px", gap: 8 }}>
-            <span style={{ color: "#64748b", fontSize: 14 }}>🔍</span>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", background: "var(--bg-app)", color: "var(--text-primary)", overflow: "hidden", fontFamily: "Inter, -apple-system, sans-serif" }}>
+      {/* 1. Top Bar Header */}
+      <header style={{ height: 60, background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(8px)", borderBottom: "1px solid var(--border-default)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 30 }}>
+        {/* Left: Brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--brand-primary)", lineHeight: 1.1 }}>SIH 2026</div>
+            <div style={{ fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.02em" }}>Integrated Land Governance</div>
+          </div>
+        </div>
+
+        {/* Center: Search Bar */}
+        <div style={{ flex: 1, maxWidth: 480, position: "relative", margin: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "rgba(0, 0, 0, 0.04)", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: 8, padding: "7px 12px", gap: 8 }}>
+            <span style={{ color: "#64748b", display: "flex" }}><Search size={14} /></span>
             <input
               type="text"
               value={searchQuery}
@@ -647,7 +559,7 @@ function MapContent() {
                 handleSearch(e.target.value);
               }}
               placeholder="Search ULPIN, Survey No., Owner Name, Location..."
-              style={{ background: "transparent", border: "none", outline: "none", color: "#f8fafc", fontSize: 12, width: "100%" }}
+              style={{ background: "transparent", border: "none", outline: "none", color: "var(--text-primary)", fontSize: 12, width: "100%" }}
             />
           </div>
 
@@ -675,39 +587,39 @@ function MapContent() {
           )}
         </div>
 
-        {/* Right: Actions */}
+        {/* Right: Quick Action Controls & User */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => setShowLayers(!showLayers)}
-            style={{ background: showLayers ? "rgba(56, 189, 248, 0.15)" : "rgba(255, 255, 255, 0.06)", border: showLayers ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.1)", color: showLayers ? "#38bdf8" : "#e2e8f0", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ background: showLayers ? "var(--brand-primary)" : "rgba(0, 0, 0, 0.04)", border: showLayers ? "1px solid var(--brand-primary)" : "1px solid rgba(0, 0, 0, 0.1)", color: showLayers ? "#fff" : "var(--text-primary)", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
-            <span>🗂</span> Layers
+            <Layers size={14} /> Layers
           </button>
 
           <button
             onClick={() => router.push("/officer/conflicts")}
-            style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#e2e8f0", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ background: "rgba(0, 0, 0, 0.04)", border: "1px solid rgba(0, 0, 0, 0.1)", color: "var(--text-primary)", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
-            <span>⚡</span> Filter
+            <Zap size={14} /> Filter
           </button>
 
           <Link href="/admin/intelligence" style={{ textDecoration: "none" }}>
-            <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#10b981", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#059669", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
               <span>AI Insights</span>
-              <span style={{ background: "#10b981", color: "#0b0f19", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 }}>8</span>
+              <span style={{ background: "#10b981", color: "#fff", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 }}>8</span>
             </div>
           </Link>
 
-          <div style={{ position: "relative", cursor: "pointer" }}>
-            <span style={{ fontSize: 16, color: "#94a3b8" }}>🔔</span>
+          <div style={{ position: "relative", cursor: "pointer", display: "flex", alignItems: "center" }}>
+            <Bell size={18} color="var(--text-secondary)" />
             <span style={{ position: "absolute", top: -4, right: -6, background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 4px", borderRadius: 8 }}>12</span>
           </div>
 
           <Link href="/login" style={{ textDecoration: "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 6, padding: "5px 10px", color: "#f8fafc", fontSize: 12 }}>
-              <span>👤</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 0, 0, 0.04)", border: "1px solid rgba(0, 0, 0, 0.1)", borderRadius: 6, padding: "5px 10px", color: "var(--text-primary)", fontSize: 12 }}>
+              <User size={14} />
               <span style={{ fontWeight: 600 }}>{currentUser?.title?.split(" ")[0] || "Officer"}</span>
-              <span style={{ fontSize: 10, color: "#94a3b8" }}>▾</span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>▾</span>
             </div>
           </Link>
         </div>
@@ -717,21 +629,30 @@ function MapContent() {
       <div style={{ display: "flex", flex: 1, position: "relative", overflow: "hidden" }}>
         {/* 2. Left Sidebar: LAYER CONTROL */}
         {showLayers && (
-          <aside style={{ width: 250, background: "rgba(11, 15, 25, 0.96)", borderRight: "1px solid rgba(255, 255, 255, 0.08)", backdropFilter: "blur(16px)", zIndex: 20, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-            <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase" }}>LAYER CONTROL</span>
-              <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", fontSize: 12 }}>✕</button>
+          <aside style={{ width: 250, background: "rgba(255, 255, 255, 0.96)", borderRight: "1px solid var(--border-default)", backdropFilter: "blur(16px)", zIndex: 20, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+            <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid var(--border-default)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "var(--text-secondary)", textTransform: "uppercase" }}>LAYER CONTROL</span>
+              <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 12 }}><X size={14} /></button>
             </div>
 
             {/* Base Layers */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>BASE LAYERS</div>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-default)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>BASE LAYERS</div>
               {BASE_LAYERS_CONFIG.map((layer) => (
-                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeBaseLayers[layer.id] ? "#e2e8f0" : "#64748b" }}>
+                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeBaseLayers[layer.id] ? "var(--text-primary)" : "var(--text-secondary)" }}>
                   <input
                     type="checkbox"
                     checked={Boolean(activeBaseLayers[layer.id])}
-                    onChange={(e) => toggleBaseLayer(layer.id, e.target.checked)}
+                    onChange={(e) => {
+                      const updated = { ...activeBaseLayers, [layer.id]: e.target.checked };
+                      setActiveBaseLayers(updated);
+                      if (layer.id === "parcels" && mapRef.current) {
+                        const vis = e.target.checked ? "visible" : "none";
+                        ["parcels-fill", "parcels-conflict-hatch", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
+                          if (mapRef.current?.getLayer(lyr)) mapRef.current.setLayoutProperty(lyr, "visibility", vis);
+                        });
+                      }
+                    }}
                     style={{ accentColor: "#10b981", cursor: "pointer" }}
                   />
                   <span>{layer.label}</span>
@@ -740,15 +661,15 @@ function MapContent() {
             </div>
 
             {/* Governance Layers */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>GOVERNANCE LAYERS</div>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-default)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>GOVERNANCE LAYERS</div>
               {GOVERNANCE_LAYERS_CONFIG.map((layer) => (
-                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeGovLayers[layer.id] ? "#e2e8f0" : "#64748b" }}>
+                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeGovLayers[layer.id] ? "var(--text-primary)" : "var(--text-secondary)" }}>
                   <input
                     type="checkbox"
                     checked={Boolean(activeGovLayers[layer.id])}
-                    onChange={(e) => toggleGovernanceLayer(layer.id, e.target.checked)}
-                    style={{ accentColor: layer.color || "#10b981", cursor: "pointer" }}
+                    onChange={(e) => setActiveGovLayers({ ...activeGovLayers, [layer.id]: e.target.checked })}
+                    style={{ accentColor: "#10b981", cursor: "pointer" }}
                   />
                   <span>{layer.label}</span>
                 </label>
@@ -756,8 +677,8 @@ function MapContent() {
             </div>
 
             {/* Land Classification Legend */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>LAND CLASSIFICATION</div>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-default)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>LAND CLASSIFICATION</div>
               {[
                 { label: "Agricultural", color: LAND_TYPE_COLORS.Agricultural },
                 { label: "Residential", color: LAND_TYPE_COLORS.Residential },
@@ -768,7 +689,7 @@ function MapContent() {
                 { label: "Water Body", color: LAND_TYPE_COLORS["Water Body"] },
                 { label: "Wasteland", color: LAND_TYPE_COLORS.Wasteland },
               ].map((item) => (
-                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "#cbd5e1" }}>
+                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "var(--text-secondary)" }}>
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: item.color }} />
                   <span>{item.label}</span>
                 </div>
@@ -777,17 +698,17 @@ function MapContent() {
 
             {/* Issues / Alerts Legend */}
             <div style={{ padding: "10px 14px" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>ISSUES / ALERTS</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>ISSUES / ALERTS</div>
               {[
-                { icon: "🔴", label: "Ownership Conflict" },
-                { icon: "🔺", label: "Encroachment" },
-                { icon: "🏛️", label: "Unregistered Land" },
-                { icon: "💰", label: "Tax Pending" },
-                { icon: "🏗️", label: "Building Without Permit" },
-                { icon: "⚖️", label: "Land Use Violation" },
-                { icon: "⚠️", label: "Dispute Exists" },
+                { icon: <AlertCircle size={12} color="#ef4444" />, label: "Ownership Conflict" },
+                { icon: <AlertTriangle size={12} color="#f97316" />, label: "Encroachment" },
+                { icon: <Info size={12} color="#eab308" />, label: "Unregistered Land" },
+                { icon: <Clock size={12} color="#3b82f6" />, label: "Tax Pending" },
+                { icon: <Hammer size={12} color="#a855f7" />, label: "Building Without Permit" },
+                { icon: <Scale size={12} color="#6366f1" />, label: "Land Use Violation" },
+                { icon: <FileWarning size={12} color="#ec4899" />, label: "Dispute Exists" },
               ].map((item) => (
-                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "#cbd5e1" }}>
+                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "var(--text-secondary)" }}>
                   <span>{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
@@ -804,11 +725,40 @@ function MapContent() {
 
         {/* 3. Central Map Canvas with Floating Overlays */}
         <div style={{ flex: 1, position: "relative", height: "100%" }}>
+          {/* Top Floating Issues Filter Pill Bar */}
+          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 15, display: "flex", alignItems: "center", background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", borderRadius: 30, padding: "6px 14px", gap: 12, backdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", marginRight: 4 }}>Show Issues</span>
+            {ISSUE_STATS.map((stat) => (
+              <button
+                key={stat.id}
+                onClick={() => setSelectedIssueFilter(selectedIssueFilter === stat.id ? null : stat.id)}
+                style={{
+                  background: selectedIssueFilter === stat.id ? stat.color + "1A" : "transparent",
+                  border: selectedIssueFilter === stat.id ? `1px solid ${stat.color}` : "1px solid rgba(0,0,0,0.1)",
+                  borderRadius: 16,
+                  padding: "4px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: selectedIssueFilter === stat.id ? stat.color : "var(--text-primary)",
+                  transition: "all 0.15s ease",
+                }}
+                title={`Filter by ${stat.label}`}
+              >
+                <span style={{ color: stat.color, display: "flex" }}>{stat.icon}</span>
+                <span>{stat.count}</span>
+              </button>
+            ))}
+          </div>
+
           {/* MapLibre Canvas Container */}
           <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
 
           {/* Bottom Center Floating Classification Legend */}
-          <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", zIndex: 15, display: "flex", alignItems: "center", background: "rgba(11, 15, 25, 0.92)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 8, padding: "6px 14px", gap: 14, backdropFilter: "blur(12px)", boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
+          <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", zIndex: 15, display: "flex", alignItems: "center", background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "6px 14px", gap: 14, backdropFilter: "blur(12px)", boxShadow: "var(--shadow-lg)" }}>
             {[
               { label: "Agricultural", color: LAND_TYPE_COLORS.Agricultural },
               { label: "Residential", color: LAND_TYPE_COLORS.Residential },
@@ -817,7 +767,7 @@ function MapContent() {
               { label: "Forest", color: LAND_TYPE_COLORS.Forest },
               { label: "Water Body", color: LAND_TYPE_COLORS["Water Body"] },
             ].map((item) => (
-              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#e2e8f0" }}>
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-primary)", fontWeight: 500 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: item.color }} />
                 <span>{item.label}</span>
               </div>
@@ -828,76 +778,78 @@ function MapContent() {
           <div style={{ position: "absolute", bottom: 20, left: 16, zIndex: 15, display: "flex", flexDirection: "column", gap: 6 }}>
             <button
               onClick={() => mapRef.current?.zoomIn()}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(11, 15, 25, 0.9)", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#fff", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", color: "var(--text-primary)", fontSize: 18, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "var(--shadow-md)" }}
             >
               +
             </button>
             <button
               onClick={() => mapRef.current?.zoomOut()}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(11, 15, 25, 0.9)", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#fff", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", color: "var(--text-primary)", fontSize: 18, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "var(--shadow-md)" }}
             >
               −
             </button>
             <button
               onClick={() => mapRef.current?.flyTo({ center: [86.120, 26.360], zoom: 15.2 })}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(11, 15, 25, 0.9)", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#fff", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", color: "var(--text-primary)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "var(--shadow-md)" }}
               title="Reset center"
             >
-              🎯
+              <Crosshair size={16} />
             </button>
           </div>
 
           {/* Bottom Right Scale Indicator */}
-          <div style={{ position: "absolute", bottom: 20, right: 16, zIndex: 15, background: "rgba(11, 15, 25, 0.85)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 4, padding: "3px 8px", fontSize: 10, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ borderBottom: "2px solid #94a3b8", width: 30, display: "inline-block" }}></span>
+          <div style={{ position: "absolute", bottom: 20, right: 16, zIndex: 15, background: "rgba(255, 255, 255, 0.95)", border: "1px solid var(--border-default)", borderRadius: 4, padding: "4px 8px", fontSize: 10, color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, boxShadow: "var(--shadow-sm)" }}>
+            <span style={{ borderBottom: "2px solid var(--text-primary)", width: 30, display: "inline-block", height: 2 }}></span>
             <span>100 m</span>
           </div>
         </div>
 
         {/* 4. Right Slide-Out Panel: PARCEL DETAILS */}
         {(selectedParcel || loading) && (
-          <aside style={{ width: 350, background: "rgba(11, 15, 25, 0.98)", borderLeft: "1px solid rgba(255, 255, 255, 0.08)", backdropFilter: "blur(16px)", zIndex: 25, display: "flex", flexDirection: "column", overflowY: "auto", boxShadow: "-8px 0 32px rgba(0,0,0,0.7)" }}>
+          <aside style={{ width: 350, background: "var(--bg-app)", borderLeft: "1px solid var(--border-default)", backdropFilter: "blur(16px)", zIndex: 25, display: "flex", flexDirection: "column", overflowY: "auto", boxShadow: "var(--shadow-lg)" }}>
             {loading ? (
-              <div style={{ padding: 40, textAlign: "center", color: "#94a3b8", margin: "auto" }}>
-                <div style={{ fontSize: 28, animation: "spin 1s linear infinite" }}>⏳</div>
+              <div style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)", margin: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                  <Loader2 size={28} style={{ animation: "spin 1s linear infinite", color: "var(--brand-primary)" }} />
+                </div>
                 <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600 }}>Loading Parcel Details...</div>
               </div>
             ) : selectedParcel ? (
               <>
                 {/* Header */}
-                <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid var(--border-default)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", color: "#f8fafc", textTransform: "uppercase" }}>PARCEL DETAILS</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", color: "var(--text-primary)", textTransform: "uppercase" }}>PARCEL DETAILS</span>
                     <button
                       onClick={() => {
                         setSelectedParcel(null);
                         mapRef.current?.setFilter("parcels-highlight", ["==", "parcel_id", ""]);
                       }}
-                      style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", fontSize: 14 }}
+                      style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontSize: 14 }}
                     >
                       ✕
                     </button>
                   </div>
 
                   {/* Top Metadata Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 8, background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 8, border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 8, background: "var(--bg-card)", padding: 10, borderRadius: 8, border: "1px solid var(--border-default)" }}>
                     <div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>ULPIN</div>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: "#38bdf8", fontFamily: "monospace" }}>{p?.ulpin || "IN-BR-PTN-0001051"}</div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Area</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{areaAcres} Acre | {areaSqm} sq.m.</div>
+                      <div style={{ fontSize: 9, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>ULPIN</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-primary)", fontFamily: "monospace" }}>{p?.ulpin || "IN-BR-PTN-0001051"}</div>
+                      <div style={{ fontSize: 9, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Area</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-primary)" }}>{areaAcres} Acre | {areaSqm} sq.m.</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Survey No.</div>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: "#f8fafc" }}>{p?.survey_number || "1051"}</div>
-                      <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Village</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>Sarai Chak</div>
+                      <div style={{ fontSize: 9, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Survey No.</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{p?.survey_number || "1051"}</div>
+                      <div style={{ fontSize: 9, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6 }}>Village</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-primary)" }}>Sarai Chak</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Tabs Bar */}
-                <div style={{ display: "flex", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", padding: "0 16px" }}>
+                <div style={{ display: "flex", borderBottom: "1px solid var(--border-default)", padding: "0 16px" }}>
                   {(["overview", "ownership", "documents", "history"] as const).map((tab) => (
                     <button
                       key={tab}
@@ -905,8 +857,8 @@ function MapContent() {
                       style={{
                         background: "transparent",
                         border: "none",
-                        borderBottom: activeTab === tab ? "2px solid #38bdf8" : "2px solid transparent",
-                        color: activeTab === tab ? "#38bdf8" : "#94a3b8",
+                        borderBottom: activeTab === tab ? "2px solid var(--brand-primary)" : "2px solid transparent",
+                        color: activeTab === tab ? "var(--brand-primary)" : "var(--text-secondary)",
                         padding: "8px 10px",
                         fontSize: 11,
                         fontWeight: activeTab === tab ? 700 : 500,
@@ -926,94 +878,98 @@ function MapContent() {
                     <>
                       {/* Properties Grid */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span style={{ color: "#94a3b8" }}>Land Use</span>
-                          <span style={{ fontWeight: 600, color: "#f8fafc", display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border-default)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Land Use</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 4 }}>
                             <span style={{ width: 6, height: 6, borderRadius: "50%", background: LAND_TYPE_COLORS[p?.land_type] || "#eab308" }}></span>
                             {p?.land_type || "Residential"}
                           </span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span style={{ color: "#94a3b8" }}>Zoning</span>
-                          <span style={{ fontWeight: 600, color: "#f8fafc" }}>Residential Zone (R2)</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border-default)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Zoning</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Residential Zone (R2)</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span style={{ color: "#94a3b8" }}>Revenue Circle</span>
-                          <span style={{ fontWeight: 600, color: "#f8fafc" }}>Patna Sadar</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border-default)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Revenue Circle</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Patna Sadar</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span style={{ color: "#94a3b8" }}>Ward No.</span>
-                          <span style={{ fontWeight: 600, color: "#f8fafc" }}>14</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border-default)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Ward No.</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>14</span>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
-                          <span style={{ color: "#94a3b8" }}>Coordinates</span>
-                          <span style={{ fontWeight: 600, color: "#f8fafc", fontFamily: "monospace" }}>{coordsText}</span>
+                          <span style={{ color: "var(--text-secondary)" }}>Coordinates</span>
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)", fontFamily: "monospace" }}>{coordsText}</span>
                         </div>
                       </div>
 
                       {/* Ownership Status Card */}
-                      <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: 8, padding: 12 }}>
+                      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: 12, boxShadow: "var(--shadow-sm)" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.06em" }}>OWNERSHIP STATUS</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", background: "rgba(16, 185, 129, 0.15)", padding: "1px 6px", borderRadius: 4 }}>✓ Verified</span>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>OWNERSHIP STATUS</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#10b981", background: "rgba(16, 185, 129, 0.15)", padding: "2px 6px", borderRadius: 4 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Verified
+                          </span>
                         </div>
                         <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 5 }}>
-                          <div><span style={{ color: "#64748b" }}>Owner(s):</span> <strong style={{ color: "#f8fafc" }}>{ownership?.name || "Rahul Kumar Singh"}</strong></div>
+                          <div><span style={{ color: "var(--text-secondary)" }}>Owner(s):</span> <strong style={{ color: "var(--text-primary)" }}>{ownership?.name || "Rahul Kumar Singh"}</strong></div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span><span style={{ color: "#64748b" }}>Ownership Type:</span> {ownership?.ownership_type || "Individual"}</span>
-                            <span><span style={{ color: "#64748b" }}>Share:</span> {ownership?.ownership_share || "100%"}</span>
+                            <span><span style={{ color: "var(--text-secondary)" }}>Ownership Type:</span> {ownership?.ownership_type || "Individual"}</span>
+                            <span><span style={{ color: "var(--text-secondary)" }}>Share:</span> {ownership?.ownership_share || "100%"}</span>
                           </div>
-                          <div><span style={{ color: "#64748b" }}>RoR Status:</span> <strong style={{ color: "#10b981" }}>Available</strong></div>
+                          <div><span style={{ color: "var(--text-secondary)" }}>RoR Status:</span> <strong style={{ color: "#10b981" }}>Available</strong></div>
                         </div>
                       </div>
 
                       {/* Conflicting Claims Card */}
                       <div style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: 8, padding: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.06em" }}>CONFLICTING CLAIMS</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444" }}>⚠️ Conflict Detected</span>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>CONFLICTING CLAIMS</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#ef4444" }}>
+                            <TriangleAlert size={12} strokeWidth={2.5} /> Conflict Detected
+                          </span>
                         </div>
                         <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 5 }}>
-                          <div><span style={{ color: "#94a3b8" }}>Claimant:</span> <strong style={{ color: "#f8fafc" }}>Suresh Prasad</strong></div>
+                          <div><span style={{ color: "var(--text-secondary)" }}>Claimant:</span> <strong style={{ color: "var(--text-primary)" }}>Suresh Prasad</strong></div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span><span style={{ color: "#94a3b8" }}>Claim Type:</span> Sale Deed (Unregistered)</span>
+                            <span><span style={{ color: "var(--text-secondary)" }}>Claim Type:</span> Sale Deed (Unregistered)</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span><span style={{ color: "#94a3b8" }}>Claim Area:</span> 0.48 Acre</span>
-                            <span><span style={{ color: "#94a3b8" }}>Documents:</span> 1 (Unverified)</span>
+                            <span><span style={{ color: "var(--text-secondary)" }}>Claim Area:</span> 0.48 Acre</span>
+                            <span><span style={{ color: "var(--text-secondary)" }}>Documents:</span> 1 (Unverified)</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Active Issues List */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.06em" }}>ACTIVE ISSUES</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255, 255, 255, 0.02)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span>🔴</span>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>ACTIVE ISSUES</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+                          <AlertCircle size={16} color="#ef4444" />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>Ownership Conflict</div>
-                            <div style={{ fontSize: 9, color: "#64748b" }}>Raised on 12 May 2025</div>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Ownership Conflict</div>
+                            <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>Raised on 12 May 2025</div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255, 255, 255, 0.02)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span>🔺</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+                          <TriangleAlert size={16} color="#f97316" />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>Encroachment Detected</div>
-                            <div style={{ fontSize: 9, color: "#64748b" }}>Raised on 02 Jun 2025</div>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Encroachment Detected</div>
+                            <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>Raised on 02 Jun 2025</div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255, 255, 255, 0.02)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span>🟡</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+                          <AlertTriangle size={16} color="#eab308" />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>Building Without Permit</div>
-                            <div style={{ fontSize: 9, color: "#64748b" }}>Raised on 18 Mar 2025</div>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Building Without Permit</div>
+                            <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>Raised on 18 Mar 2025</div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255, 255, 255, 0.02)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                          <span>🔵</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", padding: "6px 10px", borderRadius: 6, fontSize: 11, border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+                          <Info size={16} color="#3b82f6" />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>Tax Pending</div>
-                            <div style={{ fontSize: 9, color: "#64748b" }}>Due: ₹12,450</div>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Tax Pending</div>
+                            <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>Due: ₹12,450</div>
                           </div>
                         </div>
                       </div>
@@ -1022,70 +978,70 @@ function MapContent() {
 
                   {activeTab === "ownership" && (
                     <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 6 }}>
-                        <div style={{ color: "#64748b", fontSize: 10 }}>Primary Raiyat / Owner</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#38bdf8", marginTop: 2 }}>{ownership?.name || "Rahul Kumar Singh"}</div>
-                        <div style={{ color: "#94a3b8", fontSize: 10 }}>Father: Shri Raghunath Singh</div>
+                      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", padding: 10, borderRadius: 6, boxShadow: "var(--shadow-sm)" }}>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Primary Raiyat / Owner</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--brand-primary)", marginTop: 2 }}>{ownership?.name || "Rahul Kumar Singh"}</div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Father: Shri Raghunath Singh</div>
                       </div>
-                      <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 6 }}>
-                        <div style={{ color: "#64748b", fontSize: 10 }}>RoR Jamabandi Details</div>
-                        <div style={{ color: "#e2e8f0", marginTop: 4 }}>Khata Number: <strong>142</strong></div>
-                        <div style={{ color: "#e2e8f0" }}>Khesra / Plot: <strong>{p?.survey_number || "1051"}</strong></div>
-                        <div style={{ color: "#e2e8f0" }}>Lagan / Demand: <strong>₹24.50 / year</strong></div>
+                      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", padding: 10, borderRadius: 6, boxShadow: "var(--shadow-sm)" }}>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>RoR Jamabandi Details</div>
+                        <div style={{ color: "var(--text-primary)", marginTop: 4 }}>Khata Number: <strong>142</strong></div>
+                        <div style={{ color: "var(--text-primary)" }}>Khesra / Plot: <strong>{p?.survey_number || "1051"}</strong></div>
+                        <div style={{ color: "var(--text-primary)" }}>Lagan / Demand: <strong>₹24.50 / year</strong></div>
                       </div>
                     </div>
                   )}
 
                   {activeTab === "documents" && (
                     <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-card)", border: "1px solid var(--border-default)", padding: 10, borderRadius: 6, boxShadow: "var(--shadow-sm)" }}>
                         <div>
-                          <div style={{ fontWeight: 600, color: "#f8fafc" }}>Registered Sale Deed #4820/2021</div>
-                          <div style={{ color: "#64748b", fontSize: 10 }}>Registered on 14 Aug 2021</div>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Registered Sale Deed #4820/2021</div>
+                          <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Registered on 14 Aug 2021</div>
                         </div>
-                        <span style={{ color: "#38bdf8", cursor: "pointer", fontSize: 14 }}>📥</span>
+                        <Download size={14} color="var(--brand-primary)" style={{ cursor: "pointer" }} />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-card)", border: "1px solid var(--border-default)", padding: 10, borderRadius: 6, boxShadow: "var(--shadow-sm)" }}>
                         <div>
-                          <div style={{ fontWeight: 600, color: "#f8fafc" }}>Jamabandi Extract (RoR Khatiyan)</div>
-                          <div style={{ color: "#64748b", fontSize: 10 }}>Verified Revenue Record</div>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Jamabandi Extract (RoR Khatiyan)</div>
+                          <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Verified Revenue Record</div>
                         </div>
-                        <span style={{ color: "#38bdf8", cursor: "pointer", fontSize: 14 }}>📥</span>
+                        <Download size={14} color="var(--brand-primary)" style={{ cursor: "pointer" }} />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.03)", padding: 10, borderRadius: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-card)", border: "1px solid var(--border-default)", padding: 10, borderRadius: 6, boxShadow: "var(--shadow-sm)" }}>
                         <div>
-                          <div style={{ fontWeight: 600, color: "#f8fafc" }}>Non-Encumbrance Certificate (NEC)</div>
-                          <div style={{ color: "#64748b", fontSize: 10 }}>Issued by Sub-Registrar</div>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Non-Encumbrance Certificate (NEC)</div>
+                          <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Issued by Sub-Registrar</div>
                         </div>
-                        <span style={{ color: "#38bdf8", cursor: "pointer", fontSize: 14 }}>📥</span>
+                        <Download size={14} color="var(--brand-primary)" style={{ cursor: "pointer" }} />
                       </div>
                     </div>
                   )}
 
                   {activeTab === "history" && (
                     <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ borderLeft: "2px solid #38bdf8", paddingLeft: 10 }}>
-                        <div style={{ fontWeight: 600, color: "#f8fafc" }}>Mutation Order #MUT-2021-8492</div>
-                        <div style={{ color: "#64748b", fontSize: 10 }}>Approved by CO Basopatti on 22 Sep 2021</div>
+                      <div style={{ borderLeft: "2px solid var(--brand-primary)", paddingLeft: 10 }}>
+                        <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Mutation Order #MUT-2021-8492</div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>Approved by CO Basopatti on 22 Sep 2021</div>
                       </div>
                       <div style={{ borderLeft: "2px solid #10b981", paddingLeft: 10 }}>
-                        <div style={{ fontWeight: 600, color: "#f8fafc" }}>Boundary Cadastral Survey</div>
-                        <div style={{ color: "#64748b", fontSize: 10 }}>DGPS Drone Mapping Completed on 10 Jan 2024</div>
+                        <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Boundary Cadastral Survey</div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>DGPS Drone Mapping Completed on 10 Jan 2024</div>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Bottom View Land 360 Button */}
-                <div style={{ padding: 14, borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(11, 15, 25, 0.95)" }}>
+                <div style={{ padding: 14, borderTop: "1px solid var(--border-default)", background: "var(--bg-app)" }}>
                   <Link href={`/parcel/${p?.parcel_id || p?.ulpin || "1051"}`} style={{ textDecoration: "none" }}>
                     <button
                       style={{
                         width: "100%",
                         padding: "10px 0",
-                        background: "rgba(15, 23, 42, 0.8)",
-                        border: "1px solid rgba(255, 255, 255, 0.18)",
-                        color: "#f8fafc",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-default)",
+                        color: "var(--text-primary)",
                         borderRadius: 6,
                         fontSize: 12,
                         fontWeight: 700,
@@ -1095,14 +1051,15 @@ function MapContent() {
                         justifyContent: "center",
                         gap: 6,
                         transition: "all 0.2s",
+                        boxShadow: "var(--shadow-sm)"
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#38bdf8";
-                        e.currentTarget.style.boxShadow = "0 0 16px rgba(56, 189, 248, 0.25)";
+                        e.currentTarget.style.borderColor = "var(--brand-primary)";
+                        e.currentTarget.style.boxShadow = "var(--shadow-md)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.18)";
-                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.borderColor = "var(--border-default)";
+                        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
                       }}
                     >
                       <span>View Land 360°</span>
@@ -1120,8 +1077,9 @@ function MapContent() {
 
 export default function MapPage() {
   return (
-    <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#0B0F19", color: "#38bdf8" }}>Loading GIS Map Engine...</div>}>
+    <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "var(--bg-app)", color: "var(--brand-primary)" }}>Loading GIS Map Engine...</div>}>
       <MapContent />
     </Suspense>
   );
 }
+

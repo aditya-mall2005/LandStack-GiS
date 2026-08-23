@@ -3,6 +3,24 @@
 import React, { createContext, useContext, useCallback, useSyncExternalStore } from "react";
 import { UserRole, Permission } from "./types";
 import { ROLE_PERMISSIONS } from "./rbac-matrix";
+import * as Lucide from "lucide-react";
+
+export const getLucideIcon = (iconName: string) => {
+  switch (iconName) {
+    case "User": return Lucide.User;
+    case "Briefcase": return Lucide.Briefcase;
+    case "FileSignature": return Lucide.FileSignature;
+    case "Ruler": return Lucide.Ruler;
+    case "Landmark": return Lucide.Landmark;
+    case "Shield": return Lucide.Shield;
+    case "Home": return Lucide.Home;
+    case "Map": return Lucide.Map;
+    case "LayoutDashboard": return Lucide.LayoutDashboard;
+    case "Settings": return Lucide.Settings;
+    case "Search": return Lucide.Search;
+    default: return Lucide.User;
+  }
+};
 
 export interface UserPersona {
   id: string;
@@ -28,7 +46,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "CITIZEN",
     title: "Citizen / Land Owner",
     department: "Public Citizen Portal",
-    icon: "🧑‍🌾",
+    icon: "User",
     jurisdiction: "Basopatti, Madhubani (Bihar)",
     stateCode: "BR",
     districtCode: "BR-10",
@@ -44,7 +62,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "REVENUE_OFFICER",
     title: "Revenue Circle Officer (CO)",
     department: "Revenue",
-    icon: "👨‍💼",
+    icon: "Briefcase",
     jurisdiction: "Basopatti Circle, Madhubani",
     stateCode: "BR",
     districtCode: "BR-10",
@@ -60,7 +78,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "REGISTRATION_OFFICER",
     title: "Sub-Registrar (DSR)",
     department: "Registration",
-    icon: "📝",
+    icon: "FileSignature",
     jurisdiction: "Madhubani Registration District",
     stateCode: "BR",
     districtCode: "BR-10",
@@ -76,7 +94,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "PLANNING_OFFICER",
     title: "Town Planning Officer",
     department: "Planning",
-    icon: "📐",
+    icon: "Ruler",
     jurisdiction: "Madhubani Planning Area",
     stateCode: "BR",
     districtCode: "BR-10",
@@ -92,7 +110,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "TAX_OFFICER",
     title: "Executive Officer (Nagar Panchayat)",
     department: "Municipality",
-    icon: "🏛️",
+    icon: "Landmark",
     jurisdiction: "Nagar Panchayat Basopatti",
     stateCode: "BR",
     districtCode: "BR-10",
@@ -108,7 +126,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "ADMIN",
     title: "State Nodal IT Administrator",
     department: "Revenue & Land Reforms Dept",
-    icon: "⚙️",
+    icon: "Settings",
     jurisdiction: "State of Bihar (State-wide)",
     stateCode: "BR",
     districtCode: "ALL",
@@ -124,7 +142,7 @@ export const DEMO_PERSONAS: UserPersona[] = [
     role: "AUDITOR",
     title: "Principal Auditor (C&AG / Vigilance)",
     department: "Audit & Vigilance Directorate",
-    icon: "🛡️",
+    icon: "ShieldCheck",
     jurisdiction: "Union of India (National Scope)",
     stateCode: "ALL",
     districtCode: "ALL",

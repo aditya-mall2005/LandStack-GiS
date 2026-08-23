@@ -2,17 +2,18 @@
 
 import { useState, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import * as Lucide from "lucide-react";
 import apiClient from "@/lib/api-client";
 
-const SERVICE_INFO: Record<string, { name: string; icon: string; fields: string[] }> = {
-  "ownership-verification": { name: "Ownership Verification", icon: "✓", fields: ["parcel", "purpose"] },
-  "ror-extract": { name: "RoR Extract Request", icon: "📜", fields: ["parcel", "purpose"] },
-  "encumbrance-certificate": { name: "Encumbrance Certificate", icon: "🔒", fields: ["parcel", "period"] },
-  "building-permission": { name: "Building Permission", icon: "🏗️", fields: ["parcel", "building_type", "area", "floors"] },
-  "land-use-certificate": { name: "Land Use Certificate", icon: "🌾", fields: ["parcel", "purpose"] },
-  "property-tax": { name: "Property Tax Query", icon: "💰", fields: ["parcel"] },
-  "mutation": { name: "Property Mutation", icon: "📋", fields: ["parcel", "mutation_reason", "new_owner"] },
-  "restriction-check": { name: "Restriction Check", icon: "⚠️", fields: ["parcel"] },
+const SERVICE_INFO: Record<string, { name: string; icon: React.ReactNode; fields: string[] }> = {
+  "ownership-verification": { name: "Ownership Verification", icon: <Lucide.CheckCircle2 size={24} />, fields: ["parcel", "purpose"] },
+  "ror-extract": { name: "RoR Extract Request", icon: <Lucide.FileText size={24} />, fields: ["parcel", "purpose"] },
+  "encumbrance-certificate": { name: "Encumbrance Certificate", icon: <Lucide.Lock size={24} />, fields: ["parcel", "period"] },
+  "building-permission": { name: "Building Permission", icon: <Lucide.Hammer size={24} />, fields: ["parcel", "building_type", "area", "floors"] },
+  "land-use-certificate": { name: "Land Use Certificate", icon: <Lucide.Trees size={24} />, fields: ["parcel", "purpose"] },
+  "property-tax": { name: "Property Tax Query", icon: <Lucide.Wallet size={24} />, fields: ["parcel"] },
+  "mutation": { name: "Property Mutation", icon: <Lucide.FileSignature size={24} />, fields: ["parcel", "mutation_reason", "new_owner"] },
+  "restriction-check": { name: "Restriction Check", icon: <Lucide.AlertTriangle size={24} />, fields: ["parcel"] },
 };
 
 function ServiceFormContent() {
@@ -20,7 +21,7 @@ function ServiceFormContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const type = params.type as string;
-  const info = SERVICE_INFO[type] || { name: type, icon: "📋", fields: ["parcel"] };
+  const info = SERVICE_INFO[type] || { name: type, icon: <Lucide.FileText size={24} />, fields: ["parcel"] };
 
   const [form, setForm] = useState({
     parcel_ulpin: searchParams.get("parcel") || "",
@@ -70,7 +71,7 @@ function ServiceFormContent() {
     return (
       <div className="app-content animate-in">
         <div className="card" style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: "var(--space-2xl)" }}>
-          <div style={{ fontSize: 48, marginBottom: "var(--space-md)" }}>✅</div>
+          <div style={{ color: "var(--status-success)", marginBottom: "var(--space-md)" }}><Lucide.CheckCircle size={48} /></div>
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: "var(--space-sm)" }}>Application Submitted</h2>
           <p style={{ color: "var(--text-secondary)", marginBottom: "var(--space-lg)" }}>
             Your {info.name} application has been submitted successfully.
@@ -187,7 +188,7 @@ function ServiceFormContent() {
 
           {error && (
             <div className="alert alert-error" style={{ marginTop: "var(--space-md)" }}>
-              ⚠️ {error}
+              <Lucide.AlertTriangle size={14} /> {error}
             </div>
           )}
         </div>
