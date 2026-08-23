@@ -88,8 +88,13 @@ export default function IntelligenceDashboard() {
       </div>
 
       {/* Sub-Module Navigation */}
-      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap" }}>
-        {TABS.map((t) => (
+      <div className="no-scrollbar" style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        {[
+          { id: "satellite", label: "🛰️ Satellite Change Detection", count: satelliteDetections.length },
+          { id: "anomalies", label: "⚡ Transaction Risk & Anomaly Radar", count: anomalies.length },
+          { id: "ocr", label: "📄 Document Intelligence & OCR", count: "Live" },
+          { id: "assistant", label: "💬 AI Decision-Support Assistant", count: "Bot" }
+        ].map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
