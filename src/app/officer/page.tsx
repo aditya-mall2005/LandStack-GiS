@@ -5,6 +5,25 @@ import Link from "next/link";
 import { calculateSlaStatus } from "@/lib/workflow";
 import { useAuth } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
+import {
+  Check,
+  CheckCircle2,
+  X,
+  XCircle,
+  AlertTriangle,
+  AlertCircle,
+  FileText,
+  FileSignature,
+  Lock,
+  Building2,
+  ReceiptText,
+  FileQuestion,
+  Loader2,
+  MapPin,
+  ExternalLink,
+  Clock,
+  ShieldAlert,
+} from "lucide-react";
 
 const DEPARTMENTS = ["All", "Revenue", "Registration", "Planning", "Municipality", "Environment"];
 
@@ -375,20 +394,23 @@ export default function OfficerPortal() {
               {/* Tab 2: Automated Pre-Checks (Step 13 / 14) */}
               {activeTab === "prechecks" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-accent)" }}>🤖 Automated Decision-Support Pre-Checks</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-accent)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <ShieldAlert size={14} /> Automated Decision-Support Pre-Checks
+                  </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {[
                       { label: "Ownership Title & Raiyat Match", status: prechecks.ownership_match !== false, passMsg: "Verified against Bihar Bhumi RoR", failMsg: "Name mismatch detected" },
                       { label: "Spatial Land-Use Zoning Compatibility", status: prechecks.land_use_match !== false, passMsg: "Permitted under Master Plan 2035", failMsg: "Zoning conflict with Master Plan" },
-                      { label: "Environmental & Flood Buffer Clearance", status: !prechecks.flood_buffer_conflict && !prechecks.flood_zone_flag, passMsg: "Outside flood and forest buffer zones", failMsg: "Parcel intersects protected river buffer zone ⚠️" },
+                      { label: "Environmental & Flood Buffer Clearance", status: !prechecks.flood_buffer_conflict && !prechecks.flood_zone_flag, passMsg: "Outside flood and forest buffer zones", failMsg: "Parcel intersects protected river buffer zone" },
                       { label: "Active Dispute / Court Stay Order Check", status: !prechecks.dispute_flag, passMsg: "No active civil court stay registered", failMsg: "Active title suit pending in Civil Court" },
                       { label: "Bank Mortgage & Encumbrance Clearance", status: !prechecks.encumbrance_flag, passMsg: "Clear title with zero active attachments", failMsg: "Active commercial bank charge registered" },
                     ].map((c) => (
                       <div key={c.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-secondary)", padding: "8px 12px", borderRadius: 6 }}>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 600 }}>{c.label}</div>
-                          <div style={{ fontSize: 10, color: c.status ? "var(--status-success)" : "var(--status-error)" }}>
-                            {c.status ? `✓ ${c.passMsg}` : `✕ ${c.failMsg}`}
+                          <div style={{ fontSize: 10, color: c.status ? "var(--status-success)" : "var(--status-error)", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                            {c.status ? <Check size={11} strokeWidth={2.5} /> : <AlertTriangle size={11} />}
+                            <span>{c.status ? c.passMsg : c.failMsg}</span>
                           </div>
                         </div>
                         <span className={`badge ${c.status ? "badge-success" : "badge-error"}`} style={{ fontSize: 10 }}>
@@ -404,23 +426,33 @@ export default function OfficerPortal() {
               {activeTab === "land360" && (
                 <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div className="field-row">
-                    <span className="field-label">📜 Jamabandi RoR Owner</span>
+                    <span className="field-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <FileText size={13} color="var(--brand-primary)" /> Jamabandi RoR Owner
+                    </span>
                     <span className="field-value">{parcel360?.ror?.raiyat_name || parcel360?.owners?.[0]?.name || "Rameshwar Prasad Yadav"}</span>
                   </div>
                   <div className="field-row">
-                    <span className="field-label">📝 Registered Transactions</span>
+                    <span className="field-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <FileSignature size={13} color="var(--brand-primary)" /> Registered Transactions
+                    </span>
                     <span className="field-value">{parcel360?.registrations?.length || 1} Deeds on record</span>
                   </div>
                   <div className="field-row">
-                    <span className="field-label">🔒 Active Encumbrances</span>
+                    <span className="field-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Lock size={13} color="var(--brand-primary)" /> Active Encumbrances
+                    </span>
                     <span className="field-value">{parcel360?.encumbrances?.length || 0} active charges</span>
                   </div>
                   <div className="field-row">
-                    <span className="field-label">🏗️ Building Permissions</span>
+                    <span className="field-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Building2 size={13} color="var(--brand-primary)" /> Building Permissions
+                    </span>
                     <span className="field-value">{parcel360?.building_permissions?.length || 0} permits</span>
                   </div>
                   <div className="field-row">
-                    <span className="field-label">💰 Property Tax Status</span>
+                    <span className="field-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <ReceiptText size={13} color="var(--brand-primary)" /> Property Tax Status
+                    </span>
                     <span className="field-value" style={{ color: "var(--status-success)" }}>PAID_UP_TO_DATE</span>
                   </div>
                 </div>
@@ -447,36 +479,36 @@ export default function OfficerPortal() {
               <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--border-color)" }}>
                 <button
                   className="btn btn-primary"
-                  style={{ flex: 1, fontSize: 12, justifyContent: "center" }}
+                  style={{ flex: 1, fontSize: 12, justifyContent: "center", display: "inline-flex", alignItems: "center", gap: 6 }}
                   onClick={() => setModalMode("APPROVE")}
                   disabled={actionLoading}
                 >
-                  ✓ Approve Application
+                  <Check size={14} /> Approve Application
                 </button>
                 <button
                   className="btn btn-outline"
-                  style={{ fontSize: 12, color: "var(--status-warning)", borderColor: "var(--status-warning)" }}
+                  style={{ fontSize: 12, color: "var(--status-warning)", borderColor: "var(--status-warning)", display: "inline-flex", alignItems: "center", gap: 6 }}
                   onClick={() => setModalMode("REQUEST_INFO")}
                   disabled={actionLoading}
                 >
-                  📄 Request Info
+                  <FileQuestion size={14} /> Request Info
                 </button>
                 <button
                   className="btn btn-outline"
-                  style={{ fontSize: 12, color: "var(--status-error)", borderColor: "var(--status-error)" }}
+                  style={{ fontSize: 12, color: "var(--status-error)", borderColor: "var(--status-error)", display: "inline-flex", alignItems: "center", gap: 6 }}
                   onClick={() => setModalMode("REJECT")}
                   disabled={actionLoading}
                 >
-                  ✕ Reject
+                  <X size={14} /> Reject
                 </button>
                 {app.sla_status === "SLA_BREACHED" && !app.escalated && (
                   <button
                     className="btn btn-outline"
-                    style={{ fontSize: 12, color: "var(--status-error)" }}
+                    style={{ fontSize: 12, color: "var(--status-error)", display: "inline-flex", alignItems: "center", gap: 6 }}
                     onClick={() => setModalMode("ESCALATE")}
                     disabled={actionLoading}
                   >
-                    🚨 Escalate SLA
+                    <AlertTriangle size={14} /> Escalate SLA
                   </button>
                 )}
               </div>
@@ -493,11 +525,11 @@ export default function OfficerPortal() {
       {modalMode && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div className="card" style={{ width: 480, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-            <h3 className="card-title" style={{ marginBottom: 8 }}>
-              {modalMode === "APPROVE" && "✓ Approve & Issue Order"}
-              {modalMode === "REJECT" && "✕ Reject Application (Mandatory Reason)"}
-              {modalMode === "REQUEST_INFO" && "📄 Request Additional Documentation"}
-              {modalMode === "ESCALATE" && "🚨 Escalate SLA Breach to Supervisor"}
+            <h3 className="card-title" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              {modalMode === "APPROVE" && <><Check size={16} color="var(--status-success)" /> Approve & Issue Order</>}
+              {modalMode === "REJECT" && <><X size={16} color="var(--status-error)" /> Reject Application (Mandatory Reason)</>}
+              {modalMode === "REQUEST_INFO" && <><FileQuestion size={16} color="var(--status-warning)" /> Request Additional Documentation</>}
+              {modalMode === "ESCALATE" && <><AlertTriangle size={16} color="var(--status-error)" /> Escalate SLA Breach to Supervisor</>}
             </h3>
             <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14 }}>
               {modalMode === "APPROVE" && "Enter officer approval notes. An immutable audit record will be created and the applicant notified."}

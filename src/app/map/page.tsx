@@ -8,6 +8,28 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "@/lib/api-client";
 import { useAuth } from "@/lib/security/auth-context";
 import { useLanguage } from "@/lib/i18n/language-context";
+import {
+  Search,
+  Layers,
+  SlidersHorizontal,
+  Sparkles,
+  User,
+  Plus,
+  Minus,
+  Crosshair,
+  Loader2,
+  X,
+  Check,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  ShieldCheck,
+  Download,
+  PieChart,
+  FileText,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
 
 // Configure worker URL for Next.js Turbopack compatibility
 if (typeof window !== "undefined") {
@@ -464,7 +486,7 @@ function MapContent() {
             <div style="color:#0f172a;font-size:11px">Survey: <strong>${pr.survey_number || "—"}</strong></div>
             <div style="color:#64748b;font-size:10px">Area: ${(Number(pr.area || 0) / 4046.86).toFixed(2)} Acre (${Number(pr.area || 0).toFixed(0)} sq.m.)</div>
             <div style="display:inline-block;padding:2px 8px;border-radius:12px;background:${LAND_TYPE_COLORS[pr.land_type] || "#3b82f6"}18;color:${LAND_TYPE_COLORS[pr.land_type] || "#0284c7"};border:1px solid ${LAND_TYPE_COLORS[pr.land_type] || "#0284c7"};font-size:10px;margin-top:4px;font-weight:600">${pr.land_type || "Land"}</div>
-            ${pr.has_conflict ? '<div style="color:#dc2626;font-size:10px;margin-top:4px;font-weight:700">⚠️ Active Conflict / Dispute</div>' : ''}
+            ${pr.has_conflict ? '<div style="color:#dc2626;font-size:10px;margin-top:4px;font-weight:700;display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> Active Conflict / Dispute</div>' : ''}
           </div>
         `)
         .addTo(map);
@@ -691,7 +713,7 @@ function MapContent() {
         {/* Search Input */}
         <div style={{ flex: 1, minWidth: 140, maxWidth: 500, position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "5px 10px", gap: 6 }}>
-            <span style={{ color: "#64748b", fontSize: 13 }}>🔍</span>
+            <Search size={14} style={{ color: "#64748b", flexShrink: 0 }} />
             <input
               type="text"
               value={searchQuery}
@@ -732,21 +754,21 @@ function MapContent() {
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, flexShrink: 0 }}>
           <button
             onClick={() => setShowLayers(!showLayers)}
-            style={{ background: showLayers ? "rgba(15, 23, 42, 0.08)" : "#f1f5f9", border: showLayers ? "1px solid #0f172a" : "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+            style={{ background: showLayers ? "rgba(15, 23, 42, 0.08)" : "#f1f5f9", border: showLayers ? "1px solid #0f172a" : "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", transition: "all 0.15s ease" }}
           >
-            <span>🗂</span> {!isMobile && "Layers"}
+            <Layers size={14} /> {!isMobile && "Layers"}
           </button>
 
           <button
             onClick={() => router.push("/officer/conflicts")}
-            style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+            style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", transition: "all 0.15s ease" }}
           >
-            <span>⚡</span> {!isMobile && "Filter"}
+            <SlidersHorizontal size={14} /> {!isMobile && "Filter"}
           </button>
 
           <Link href="/admin/intelligence" style={{ textDecoration: "none" }}>
-            <div style={{ background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#059669", padding: isMobile ? "5px 8px" : "6px 10px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-              <span>🤖</span>
+            <div style={{ background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#059669", padding: isMobile ? "5px 8px" : "6px 10px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s ease" }}>
+              <Sparkles size={14} />
               {!isMobile && <span>AI Insights</span>}
               <span style={{ background: "#10b981", color: "#fff", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800 }}>8</span>
             </div>
@@ -755,7 +777,7 @@ function MapContent() {
           {!isMobile && (
             <Link href="/login" style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 6, padding: "5px 10px", color: "#0f172a", fontSize: 12 }}>
-                <span>👤</span>
+                <User size={14} />
                 <span style={{ fontWeight: 600 }}>{currentUser?.title?.split(" ")[0] || "Officer"}</span>
                 <span style={{ fontSize: 10, color: "#64748b" }}>▾</span>
               </div>
@@ -800,7 +822,7 @@ function MapContent() {
               )}
               <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#64748b", textTransform: "uppercase" }}>LAYER CONTROL</span>
-                <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4 }}>✕</button>
+                <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} /></button>
               </div>
 
               {/* Base Layers */}
@@ -916,22 +938,24 @@ function MapContent() {
           >
             <button
               onClick={() => mapRef.current?.zoomIn()}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              title="Zoom In"
             >
-              +
+              <Plus size={16} />
             </button>
             <button
               onClick={() => mapRef.current?.zoomOut()}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              title="Zoom Out"
             >
-              −
+              <Minus size={16} />
             </button>
             <button
               onClick={() => mapRef.current?.flyTo({ center: [86.1165, 26.3630], zoom: 15.1, duration: 1200 })}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
               title="Reset View"
             >
-              🎯
+              <Crosshair size={16} />
             </button>
           </div>
         </div>
@@ -964,8 +988,10 @@ function MapContent() {
             )}
             {loading ? (
               <div style={{ padding: 40, textAlign: "center", color: "#64748b", margin: "auto" }}>
-                <div style={{ fontSize: 28, animation: "spin 1s linear infinite" }}>⏳</div>
-                <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600 }}>Loading Parcel Details...</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                  <Loader2 size={32} className="animate-spin" style={{ color: "#0284c7" }} />
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600 }}>Loading Parcel Details...</div>
               </div>
             ) : selectedParcel ? (
               <>
@@ -975,13 +1001,13 @@ function MapContent() {
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", color: "#0f172a", textTransform: "uppercase" }}>PARCEL DETAILS</span>
                       {conflicts.length > 0 && (
-                        <span style={{ background: "#fee2e2", color: "#dc2626", border: "1px solid #f87171", borderRadius: 4, padding: "1px 6px", fontSize: 9, fontWeight: 800 }}>
-                          CONFLICT
+                        <span style={{ background: "#fee2e2", color: "#dc2626", border: "1px solid #f87171", borderRadius: 4, padding: "1px 6px", fontSize: 9, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          <AlertTriangle size={10} /> CONFLICT
                         </span>
                       )}
                       {disputes.length > 0 && (
-                        <span style={{ background: "#f3e8ff", color: "#9333ea", border: "1px solid #c084fc", borderRadius: 4, padding: "1px 6px", fontSize: 9, fontWeight: 800 }}>
-                          COURT CASE
+                        <span style={{ background: "#f3e8ff", color: "#9333ea", border: "1px solid #c084fc", borderRadius: 4, padding: "1px 6px", fontSize: 9, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          <AlertCircle size={10} /> COURT CASE
                         </span>
                       )}
                     </div>
@@ -990,9 +1016,9 @@ function MapContent() {
                         setSelectedParcel(null);
                         mapRef.current?.setFilter("parcels-highlight", ["==", "parcel_id", ""]);
                       }}
-                      style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4 }}
+                      style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}
                     >
-                      ✕
+                      <X size={15} />
                     </button>
                   </div>
 
@@ -1027,29 +1053,35 @@ function MapContent() {
                     msOverflowStyle: "none",
                   }}
                 >
-                  {(["overview", "ownership", "documents", "history"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: activeTab === tab ? "2px solid #0284c7" : "2px solid transparent",
-                        color: activeTab === tab ? "#0284c7" : "#64748b",
-                        padding: "8px 4px",
-                        fontSize: 12,
-                        fontWeight: activeTab === tab ? 700 : 500,
-                        cursor: "pointer",
-                        textTransform: "capitalize",
-                        whiteSpace: "nowrap",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      {t(`tab.${tab}`)}
-                    </button>
-                  ))}
+                  {(["overview", "ownership", "documents", "history"] as const).map((tab) => {
+                    const icon = tab === "overview" ? <PieChart size={12} /> : tab === "ownership" ? <User size={12} /> : tab === "documents" ? <FileText size={12} /> : <Clock size={12} />;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 4,
+                          background: "transparent",
+                          border: "none",
+                          borderBottom: activeTab === tab ? "2px solid #0284c7" : "2px solid transparent",
+                          color: activeTab === tab ? "#0284c7" : "#64748b",
+                          padding: "8px 4px",
+                          fontSize: 12,
+                          fontWeight: activeTab === tab ? 700 : 500,
+                          cursor: "pointer",
+                          textTransform: "capitalize",
+                          whiteSpace: "nowrap",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {icon} {t(`tab.${tab}`)}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Tab Content Body */}
@@ -1087,7 +1119,9 @@ function MapContent() {
                       <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                           <span style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em" }}>OWNERSHIP STATUS</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "rgba(16, 185, 129, 0.12)", padding: "1px 6px", borderRadius: 4 }}>✓ Verified</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "rgba(16, 185, 129, 0.12)", padding: "2px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            <Check size={11} strokeWidth={2.5} /> Verified
+                          </span>
                         </div>
                         <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 5 }}>
                           <div><span style={{ color: "#64748b" }}>Owner(s):</span> <strong style={{ color: "#0f172a" }}>{primaryOwner?.name || "Rahul Kumar Singh"}</strong></div>
@@ -1106,7 +1140,9 @@ function MapContent() {
                       {conflicts.length > 0 ? (
                         <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: "#dc2626", letterSpacing: "0.06em" }}>CONFLICTING CLAIMS</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, color: "#dc2626", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 4 }}>
+                              <AlertTriangle size={12} color="#dc2626" /> CONFLICTING CLAIMS
+                            </span>
                             <span style={{ fontSize: 9, fontWeight: 800, background: "#dc2626", color: "#fff", padding: "1px 6px", borderRadius: 4 }}>
                               {conflicts[0]?.severity || "HIGH"} SEVERITY
                             </span>
@@ -1118,14 +1154,20 @@ function MapContent() {
                                 <div>• <strong>{c.source_a}:</strong> {c.value_a}</div>
                                 <div>• <strong>{c.source_b}:</strong> {c.value_b}</div>
                               </div>
-                              <div style={{ fontSize: 10, color: "#dc2626", marginTop: 2 }}>⚠️ Discrepancy under verification by Circle Officer.</div>
+                              <div style={{ fontSize: 10, color: "#dc2626", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                                <AlertTriangle size={12} /> Discrepancy under verification by Circle Officer.
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
                         <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 12px" }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: "#16a34a", letterSpacing: "0.06em" }}>SPATIAL DATA INTEGRITY</div>
-                          <div style={{ fontSize: 11, color: "#166534", marginTop: 4 }}>✓ Clear Title — No boundary overlap or khatiyan area discrepancy detected.</div>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: "#16a34a", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 4 }}>
+                            <CheckCircle2 size={12} /> SPATIAL DATA INTEGRITY
+                          </div>
+                          <div style={{ fontSize: 11, color: "#166534", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                            <CheckCircle2 size={13} color="#166534" /> Clear Title — No boundary overlap or khatiyan area discrepancy detected.
+                          </div>
                         </div>
                       )}
 
@@ -1133,7 +1175,9 @@ function MapContent() {
                       {disputes.length > 0 ? (
                         <div style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: "#9333ea", letterSpacing: "0.06em" }}>COURT LITIGATION</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, color: "#9333ea", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 4 }}>
+                              <AlertCircle size={12} /> COURT LITIGATION
+                            </span>
                             <span style={{ fontSize: 9, fontWeight: 800, background: "#9333ea", color: "#fff", padding: "1px 6px", borderRadius: 4 }}>
                               ACTIVE SUIT
                             </span>
@@ -1144,8 +1188,8 @@ function MapContent() {
                               <div><span style={{ color: "#64748b" }}>Type:</span> <span style={{ color: "#334155" }}>{d.dispute_type?.replace(/_/g, " ")}</span></div>
                               <div><span style={{ color: "#64748b" }}>Parties:</span> <span style={{ color: "#334155" }}>{d.petitioner} vs {d.respondent}</span></div>
                               {d.stay_order && (
-                                <div style={{ color: "#dc2626", fontSize: 10, fontWeight: 700, marginTop: 2 }}>
-                                  🔴 Stay Order Active (Sale & Mutation Prohibited)
+                                <div style={{ color: "#dc2626", fontSize: 10, fontWeight: 700, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <AlertCircle size={12} color="#dc2626" /> Stay Order Active (Sale & Mutation Prohibited)
                                 </div>
                               )}
                               {d.next_hearing && (
@@ -1159,7 +1203,9 @@ function MapContent() {
                       ) : (
                         <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px" }}>
                           <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em" }}>LEGAL LITIGATION</div>
-                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>✓ Litigation Free — No pending civil court suits or injunction stay orders.</div>
+                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                            <ShieldCheck size={13} color="#16a34a" /> Litigation Free — No pending civil court suits or injunction stay orders.
+                          </div>
                         </div>
                       )}
 
@@ -1182,7 +1228,9 @@ function MapContent() {
                       ) : (
                         <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px" }}>
                           <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em" }}>ENCUMBRANCE STATUS</div>
-                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>✓ Nil Encumbrance — Free from bank mortgages and financial liens.</div>
+                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                            <ShieldCheck size={13} color="#16a34a" /> Nil Encumbrance — Free from bank mortgages and financial liens.
+                          </div>
                         </div>
                       )}
 
@@ -1239,7 +1287,7 @@ function MapContent() {
                               <div style={{ color: "#64748b", fontSize: 10 }}>Date: {new Date(reg.registration_date).toLocaleDateString("en-IN")} • Value: ₹{Number(reg.consideration_amount).toLocaleString("en-IN")}</div>
                               <div style={{ color: "#0284c7", fontSize: 9, marginTop: 2 }}>{reg.seller_reference} → {reg.buyer_reference}</div>
                             </div>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontSize: 14 }}>📥</span>
+                            <Download size={15} color="#0284c7" style={{ cursor: "pointer", flexShrink: 0 }} />
                           </div>
                         ))
                       ) : (
@@ -1248,7 +1296,7 @@ function MapContent() {
                             <div style={{ fontWeight: 600, color: "#0f172a" }}>Registered Sale Deed #DOC-2021/4820</div>
                             <div style={{ color: "#64748b", fontSize: 10 }}>Registered on 14 Aug 2021 • e-Nibandhan Bihar</div>
                           </div>
-                          <span style={{ color: "#0284c7", cursor: "pointer", fontSize: 14 }}>📥</span>
+                          <Download size={15} color="#0284c7" style={{ cursor: "pointer", flexShrink: 0 }} />
                         </div>
                       )}
 
@@ -1257,7 +1305,7 @@ function MapContent() {
                           <div style={{ fontWeight: 600, color: "#0f172a" }}>Jamabandi Extract (RoR Khatiyan)</div>
                           <div style={{ color: "#64748b", fontSize: 10 }}>Verified Revenue Record • Panji-II</div>
                         </div>
-                        <span style={{ color: "#0284c7", cursor: "pointer", fontSize: 14 }}>📥</span>
+                        <Download size={15} color="#0284c7" style={{ cursor: "pointer", flexShrink: 0 }} />
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: 10, borderRadius: 6, border: "1px solid #e2e8f0" }}>
@@ -1265,7 +1313,7 @@ function MapContent() {
                           <div style={{ fontWeight: 600, color: "#0f172a" }}>Non-Encumbrance Certificate (NEC)</div>
                           <div style={{ color: "#64748b", fontSize: 10 }}>Issued by Sub-Registrar Basopatti</div>
                         </div>
-                        <span style={{ color: "#0284c7", cursor: "pointer", fontSize: 14 }}>📥</span>
+                        <Download size={15} color="#0284c7" style={{ cursor: "pointer", flexShrink: 0 }} />
                       </div>
                     </div>
                   )}
@@ -1323,6 +1371,7 @@ function MapContent() {
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >
+                      <ExternalLink size={14} />
                       <span>{t("map.view_land360")}</span>
                     </button>
                   </Link>
