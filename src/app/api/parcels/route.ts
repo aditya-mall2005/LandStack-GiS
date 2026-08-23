@@ -34,12 +34,9 @@ export async function GET(request: NextRequest) {
         ST_AsGeoJSON(p.geom)::json AS geometry,
         ST_X(ST_Centroid(p.geom)) AS centroid_lng,
         ST_Y(ST_Centroid(p.geom)) AS centroid_lat,
-        CASE 
-          WHEN c.conflict_id IS NOT NULL THEN true 
-          WHEN d.dispute_id IS NOT NULL THEN true 
-          ELSE false 
-        END AS has_conflict,
+        c.conflict_id,
         c.conflict_type,
+        d.dispute_id,
         d.dispute_type,
         bp.status AS bp_status,
         pt.status AS pt_status
@@ -93,17 +90,18 @@ export async function GET(request: NextRequest) {
         let issueIcon: string | null = null;
         let issueColor: string | null = null;
         let issueLabel: string | null = null;
+        const hasConflict = Boolean(row.conflict_id || row.dispute_id);
 
-        if (row.conflict_type === "BOUNDARY_OVERLAP" || row.has_conflict) {
+        if (row.conflict_id) {
           issueType = "OWNERSHIP_CONFLICT";
           issueIcon = "🔴";
           issueColor = "#ef4444";
-          issueLabel = "Ownership / Boundary Conflict";
-        } else if (row.dispute_type === "TITLE_SUIT") {
+          issueLabel = "Boundary / Ownership Conflict";
+        } else if (row.dispute_id) {
           issueType = "DISPUTE";
           issueIcon = "⚖️";
           issueColor = "#a855f7";
-          issueLabel = "Title Dispute";
+          issueLabel = "Active Title Dispute";
         } else if (row.bp_status === "PENDING") {
           issueType = "BUILDING_WITHOUT_PERMIT";
           issueIcon = "🏗️";
@@ -113,7 +111,7 @@ export async function GET(request: NextRequest) {
           issueType = "TAX_PENDING";
           issueIcon = "💰";
           issueColor = "#3b82f6";
-          issueLabel = "Tax Pending";
+          issueLabel = "Tax Arrears Pending";
         }
 
         const cLng = Number(row.centroid_lng);
@@ -136,7 +134,7 @@ export async function GET(request: NextRequest) {
             village_code: row.village_code,
             source_system: row.source_system,
             centroid: [cLng || 86.12, cLat || 26.36],
-            has_conflict: Boolean(row.has_conflict),
+            has_conflict: hasConflict,
             issue_type: issueType,
             issue_icon: issueIcon,
             issue_color: issueColor,
