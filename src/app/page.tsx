@@ -283,12 +283,12 @@ export default function Dashboard() {
 
       <div className="service-grid" style={{ marginBottom: "var(--space-lg)" }}>
         {role === "CITIZEN" && [
-          { icon: "🗺️", name: t("service.my_parcels"), desc: t("service.my_parcels_desc"), href: "/map" },
-          { icon: "📄", name: t("service.ror_extract"), desc: t("service.ror_extract_desc"), href: "/services/ror-extract" },
-          { icon: "📝", name: t("service.apply_mutation"), desc: t("service.apply_mutation_desc"), href: "/services/mutation" },
-          { icon: "📋", name: t("service.track_apps"), desc: t("service.track_apps_desc"), href: "/applications" },
-          { icon: "🔒", name: t("service.encumbrance"), desc: t("service.encumbrance_desc"), href: "/services/encumbrance-certificate" },
-          { icon: "🏗️", name: t("service.building_permission"), desc: t("service.building_permission_desc"), href: "/services/building-permission" },
+          { icon: <Lucide.Map size={24} color="var(--brand-primary)" />, name: t("service.my_parcels"), desc: t("service.my_parcels_desc"), href: "/map" },
+          { icon: <Lucide.FileText size={24} color="var(--brand-primary)" />, name: t("service.ror_extract"), desc: t("service.ror_extract_desc"), href: "/services/ror-extract" },
+          { icon: <Lucide.FileSignature size={24} color="var(--brand-primary)" />, name: t("service.apply_mutation"), desc: t("service.apply_mutation_desc"), href: "/services/mutation" },
+          { icon: <Lucide.ClipboardList size={24} color="var(--brand-primary)" />, name: t("service.track_apps"), desc: t("service.track_apps_desc"), href: "/applications" },
+          { icon: <Lucide.Lock size={24} color="var(--brand-primary)" />, name: t("service.encumbrance"), desc: t("service.encumbrance_desc"), href: "/services/encumbrance-certificate" },
+          { icon: <Lucide.Building2 size={24} color="var(--brand-primary)" />, name: t("service.building_permission"), desc: t("service.building_permission_desc"), href: "/services/building-permission" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
@@ -298,10 +298,10 @@ export default function Dashboard() {
         ))}
 
         {role === "REVENUE_OFFICER" && [
-          { icon: "👨‍💼", name: "Mutation Approval Desk", desc: "Inspect Jamabandi & approve title transfer", href: "/officer" },
-          { icon: "⚠️", name: "Boundary Dispute Resolver", desc: "Resolve 3 active spatial parcel overlaps", href: "/officer/conflicts" },
-          { icon: "🗺️", name: "Cadastral Survey Map", desc: "Inspect 300 organic agricultural parcels", href: "/map" },
-          { icon: "📜", name: "Jamabandi RoR Audit", desc: "Verify revenue khata & lagan records", href: "/services/ror-extract" },
+          { icon: <Lucide.Briefcase size={24} color="var(--brand-primary)" />, name: "Mutation Approval Desk", desc: "Inspect Jamabandi & approve title transfer", href: "/officer" },
+          { icon: <Lucide.AlertTriangle size={24} color="var(--status-warning)" />, name: "Boundary Dispute Resolver", desc: "Resolve 3 active spatial parcel overlaps", href: "/officer/conflicts" },
+          { icon: <Lucide.Map size={24} color="var(--brand-primary)" />, name: "Cadastral Survey Map", desc: "Inspect 300 organic agricultural parcels", href: "/map" },
+          { icon: <Lucide.FileText size={24} color="var(--brand-primary)" />, name: "Jamabandi RoR Audit", desc: "Verify revenue khata & lagan records", href: "/services/ror-extract" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
@@ -311,10 +311,10 @@ export default function Dashboard() {
         ))}
 
         {role === "REGISTRATION_OFFICER" && [
-          { icon: "📝", name: "Registration Queue", desc: "Verify registered sale deeds & stamps", href: "/officer?dept=Registration" },
-          { icon: "🔒", name: "Issue Non-Encumbrance", desc: "Generate certified search certificate", href: "/services/encumbrance-certificate" },
-          { icon: "🏦", name: "Bank Mortgage Registry", desc: "Review bank collateral charge filings", href: "/officer" },
-          { icon: "🗺️", name: "Cadastral Verification", desc: "Cross-check deed geometry on GIS", href: "/map" },
+          { icon: <Lucide.FileSignature size={24} color="var(--brand-primary)" />, name: "Registration Queue", desc: "Verify registered sale deeds & stamps", href: "/officer?dept=Registration" },
+          { icon: <Lucide.ShieldCheck size={24} color="var(--brand-primary)" />, name: "Issue Non-Encumbrance", desc: "Generate certified search certificate", href: "/services/encumbrance-certificate" },
+          { icon: <Lucide.Landmark size={24} color="var(--brand-primary)" />, name: "Bank Mortgage Registry", desc: "Review bank collateral charge filings", href: "/officer" },
+          { icon: <Lucide.Map size={24} color="var(--brand-primary)" />, name: "Cadastral Verification", desc: "Cross-check deed geometry on GIS", href: "/map" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
@@ -324,10 +324,10 @@ export default function Dashboard() {
         ))}
 
         {role === "PLANNING_OFFICER" && [
-          { icon: "📐", name: "Building Plan Desk", desc: "Sanction residential & commercial plans", href: "/officer?dept=Planning" },
-          { icon: "🗺️", name: "Master Plan 2035 GIS", desc: "Evaluate zoning and land-use compliance", href: "/map" },
-          { icon: "🌲", name: "Environmental Buffer Audit", desc: "Verify river & canal setback zones", href: "/map" },
-          { icon: "🧠", name: "AI Geospatial Change", desc: "Satellite change detection radar", href: "/admin/intelligence" },
+          { icon: <Lucide.Building2 size={24} color="var(--brand-primary)" />, name: "Building Plan Desk", desc: "Sanction residential & commercial plans", href: "/officer?dept=Planning" },
+          { icon: <Lucide.Compass size={24} color="var(--brand-primary)" />, name: "Master Plan 2035 GIS", desc: "Evaluate zoning and land-use compliance", href: "/map" },
+          { icon: <Lucide.Trees size={24} color="var(--brand-primary)" />, name: "Environmental Buffer Audit", desc: "Verify river & canal setback zones", href: "/map" },
+          { icon: <Lucide.Sparkles size={24} color="var(--brand-primary)" />, name: "AI Geospatial Change", desc: "Satellite change detection radar", href: "/admin/intelligence" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
@@ -337,10 +337,10 @@ export default function Dashboard() {
         ))}
 
         {role === "TAX_OFFICER" && [
-          { icon: "🏛️", name: "Municipal Tax Desk", desc: "Review property tax assessments", href: "/officer?dept=Taxation" },
-          { icon: "💰", name: "Issue Demand Notices", desc: "Generate payment challans & receipts", href: "/services/property-tax" },
-          { icon: "🗺️", name: "GIS Property Mapping", desc: "Audit built-up footprint vs tax slab", href: "/map" },
-          { icon: "⚠️", name: "Arrears & Defaulters", desc: "Track high-value municipal arrears", href: "/officer" },
+          { icon: <Lucide.ReceiptText size={24} color="var(--brand-primary)" />, name: "Municipal Tax Desk", desc: "Review property tax assessments", href: "/officer?dept=Taxation" },
+          { icon: <Lucide.Wallet size={24} color="var(--brand-primary)" />, name: "Issue Demand Notices", desc: "Generate payment challans & receipts", href: "/services/property-tax" },
+          { icon: <Lucide.Map size={24} color="var(--brand-primary)" />, name: "GIS Property Mapping", desc: "Audit built-up footprint vs tax slab", href: "/map" },
+          { icon: <Lucide.AlertCircle size={24} color="var(--status-warning)" />, name: "Arrears & Defaulters", desc: "Track high-value municipal arrears", href: "/officer" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
@@ -350,10 +350,10 @@ export default function Dashboard() {
         ))}
 
         {(role === "ADMIN" || role === "AUDITOR") && [
-          { icon: "🛡️", name: "Security & Audit Engine", desc: "Immutable SHA-256 logs & ABAC simulator", href: "/admin/security" },
-          { icon: "🔌", name: "State Adapter Hub", desc: "Unified national schema transformers", href: "/admin/adapters" },
-          { icon: "🧠", name: "AI Satellite Intelligence", desc: "NDVI change & water body encroachment", href: "/admin/intelligence" },
-          { icon: "📥", name: "Spatial Data Import", desc: "ETL pipeline for Shapefile/GeoJSON", href: "/admin/import" },
+          { icon: <Lucide.ShieldCheck size={24} color="var(--brand-primary)" />, name: "Security & Audit Engine", desc: "Immutable SHA-256 logs & ABAC simulator", href: "/admin/security" },
+          { icon: <Lucide.GitMerge size={24} color="var(--brand-primary)" />, name: "State Adapter Hub", desc: "Unified national schema transformers", href: "/admin/adapters" },
+          { icon: <Lucide.Sparkles size={24} color="var(--brand-primary)" />, name: "AI Satellite Intelligence", desc: "NDVI change & water body encroachment", href: "/admin/intelligence" },
+          { icon: <Lucide.Download size={24} color="var(--brand-primary)" />, name: "Spatial Data Import", desc: "ETL pipeline for Shapefile/GeoJSON", href: "/admin/import" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
