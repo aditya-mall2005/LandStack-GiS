@@ -685,11 +685,6 @@ function MapContent() {
             </div>
           </Link>
 
-          <div style={{ position: "relative", cursor: "pointer" }}>
-            <span style={{ fontSize: 16, color: "#64748b" }}>🔔</span>
-            <span style={{ position: "absolute", top: -4, right: -6, background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 4px", borderRadius: 8 }}>12</span>
-          </div>
-
           <Link href="/login" style={{ textDecoration: "none" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 6, padding: "5px 10px", color: "#0f172a", fontSize: 12 }}>
               <span>👤</span>
