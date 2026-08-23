@@ -3,11 +3,14 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, DEMO_PERSONAS, UserPersona, getLucideIcon } from "@/lib/security/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import * as Lucide from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { currentUser, loginAs } = useAuth();
+  const { t } = useLanguage();
   const [selectedPersona, setSelectedPersona] = useState<UserPersona>(currentUser);
   const [loggingIn, setLoggingIn] = useState(false);
   const [authFeedback, setAuthFeedback] = useState<string | null>(null);
@@ -30,6 +33,11 @@ export default function LoginPage() {
 
   return (
     <div className="app-content animate-in" style={{ maxWidth: 1180, margin: "0 auto", padding: "var(--space-2xl) var(--space-lg)" }}>
+      {/* Top Language Bar */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <LanguageSelector variant="compact" />
+      </div>
+
       {/* Header Banner */}
       <div style={{ textAlign: "center", marginBottom: "var(--space-2xl)" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -60,7 +68,7 @@ export default function LoginPage() {
             maxWidth: "100%",
           }}
         >
-          <span>Currently Active:</span>
+          <span>{t("nav.active_role")}:</span>
           <strong style={{ color: "#38bdf8", display: "inline-flex", alignItems: "center", gap: 6 }}>
             <span>{React.createElement(getLucideIcon(currentUser.icon), { size: 14 })}</span> {currentUser.name}
           </strong>

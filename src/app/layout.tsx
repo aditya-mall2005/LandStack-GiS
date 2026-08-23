@@ -3,17 +3,57 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthProvider, useAuth, DEMO_PERSONAS, getLucideIcon } from "@/lib/security/auth-context";
+import { LanguageProvider, useLanguage } from "@/lib/i18n/language-context";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { getFilteredNavSections } from "@/lib/security/route-guard";
 import { RouteGuard } from "@/components/RouteGuard";
-import * as Lucide from "lucide-react";
 import "./globals.css";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X, Home, Map as MapIcon, Search, Landmark, Layers } from "lucide-react";
+
+function getLocalizedNavLabel(label: string, t: (k: string) => string): string {
+  switch (label) {
+    case "Dashboard":
+    case "Home": return t("nav.home");
+    case "GIS Map":
+    case "Cadastral GIS Map": return t("nav.map");
+    case "Search Land":
+    case "Land 360° Search": return t("nav.search");
+    case "Services":
+    case "Citizen Services": return t("nav.services");
+    case "My Applications":
+    case "Track Applications": return t("nav.applications");
+    case "Officer Portal":
+    case "Department Officer": return t("nav.officer_desk");
+    case "Data Conflicts":
+    case "Dispute Desk": return t("nav.conflicts");
+    case "AI & Satellite AI":
+    case "AI Intelligence": return t("nav.intelligence");
+    case "Security & Audit": return t("nav.security");
+    case "State Adapters": return t("nav.adapters");
+    default: return label;
+  }
+}
+
+function getLocalizedSectionLabel(label: string, t: (k: string) => string): string {
+  switch (label) {
+    case "Main":
+    case "Core Navigation": return t("section.core_navigation");
+    case "Citizen Services":
+    case "Citizen Workflows": return t("section.citizen_services");
+    case "Department Governance":
+    case "Department Review": return t("section.officer_tools");
+    case "Intelligence & Standards":
+    case "System Architecture": return t("section.admin_governance");
+    default: return label;
+  }
+}
 
 function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const { currentUser, getInitials, isMounted } = useAuth();
+  const { t } = useLanguage();
   const activeUser = isMounted ? currentUser : DEMO_PERSONAS[0];
   const navSections = getFilteredNavSections(activeUser.role);
 
@@ -49,7 +89,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         <nav className="sidebar-nav">
           {navSections.map((section) => (
             <div key={section.label} className="sidebar-section">
-              <div className="sidebar-section-label">{section.label}</div>
+              <div className="sidebar-section-label">{getLocalizedSectionLabel(section.label, t)}</div>
               {section.items.map((item) => {
                 const IconComponent = getLucideIcon(item.icon);
                 return (
@@ -60,7 +100,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                     className={`sidebar-link ${pathname === item.href ? "active" : ""}`}
                   >
                     <span className="sidebar-link-icon"><IconComponent size={18} /></span>
-                    {item.label}
+                    {getLocalizedNavLabel(item.label, t)}
                     {item.badge && (
                       <span className="sidebar-link-badge">{item.badge}</span>
                     )}
@@ -72,6 +112,10 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         </nav>
 
         <div className="sidebar-footer">
+          {/* Pan-India Language Selector */}
+          <LanguageSelector variant="sidebar" />
+
+          {/* User Persona Switcher */}
           <Link href="/login" onClick={onClose} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
             <div
               className="sidebar-user"
@@ -109,7 +153,7 @@ function MobileHeader({ onToggleMenu, isOpen }: { onToggleMenu: () => void; isOp
 
   return (
     <header className="mobile-header">
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           onClick={onToggleMenu}
           style={{
@@ -132,12 +176,15 @@ function MobileHeader({ onToggleMenu, isOpen }: { onToggleMenu: () => void; isOp
         </span>
       </div>
 
-      <Link href="/login" style={{ textDecoration: "none" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-input)", border: "1px solid var(--border-default)", borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />
-          <span>{activeUser.title.split(" ")[0]}</span>
-        </div>
-      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <LanguageSelector variant="compact" />
+        <Link href="/login" style={{ textDecoration: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-input)", border: "1px solid var(--border-default)", borderRadius: 20, padding: "4px 8px", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />
+            <span>{activeUser.title.split(" ")[0]}</span>
+          </div>
+        </Link>
+      </div>
     </header>
   );
 }
@@ -145,30 +192,31 @@ function MobileHeader({ onToggleMenu, isOpen }: { onToggleMenu: () => void; isOp
 function MobileBottomNav({ onToggleMenu }: { onToggleMenu: () => void }) {
   const pathname = usePathname();
   const { currentUser, isMounted } = useAuth();
+  const { t } = useLanguage();
   const role = isMounted ? currentUser.role : "CITIZEN";
   const servicesHref = role === "CITIZEN" ? "/services" : "/officer";
-  const servicesLabel = role === "CITIZEN" ? "Services" : "Officer";
+  const servicesLabel = role === "CITIZEN" ? t("nav.services") : t("nav.officer_desk");
 
   return (
     <nav className="mobile-bottom-nav">
       <Link href="/" className={`mobile-nav-item ${pathname === "/" ? "active" : ""}`}>
         <span className="mobile-nav-icon"><Home size={20} /></span>
-        <span>Home</span>
+        <span>{t("nav.home")}</span>
       </Link>
 
       <Link href="/map" className={`mobile-nav-item ${pathname === "/map" ? "active" : ""}`}>
         <span className="mobile-nav-icon"><MapIcon size={20} /></span>
-        <span>GIS Map</span>
+        <span>{t("nav.map").split(" ")[0]}</span>
       </Link>
 
       <Link href="/search" className={`mobile-nav-item ${pathname === "/search" ? "active" : ""}`}>
         <span className="mobile-nav-icon"><Search size={20} /></span>
-        <span>Search</span>
+        <span>{t("nav.search").split(" ")[0]}</span>
       </Link>
 
       <Link href={servicesHref} className={`mobile-nav-item ${pathname.startsWith(servicesHref) ? "active" : ""}`}>
         <span className="mobile-nav-icon"><Landmark size={20} /></span>
-        <span>{servicesLabel}</span>
+        <span>{servicesLabel.split(" ")[0]}</span>
       </Link>
 
       <button
@@ -177,7 +225,7 @@ function MobileBottomNav({ onToggleMenu }: { onToggleMenu: () => void }) {
         style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
       >
         <span className="mobile-nav-icon"><Layers size={20} /></span>
-        <span>Menu</span>
+        <span>{t("nav.menu")}</span>
       </button>
     </nav>
   );
@@ -230,9 +278,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AuthProvider>
-          <AppShellWrapper>{children}</AppShellWrapper>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppShellWrapper>{children}</AppShellWrapper>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

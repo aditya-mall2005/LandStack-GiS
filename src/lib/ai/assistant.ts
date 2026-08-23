@@ -15,14 +15,15 @@ export interface ChatMessage {
 export async function processGovernanceAssistantQuery(
   userQuery: string,
   role: string = "OFFICER",
-  contextParcelId?: string
+  contextParcelId?: string,
+  language: string = "en"
 ): Promise<{ reply: string; toolsUsed: string[]; parcelData?: any }> {
   const q = userQuery.toLowerCase();
   const toolsUsed: string[] = [];
   let parcelData: any = null;
 
   // 1. Tool 1: Parcel Lookup
-  if (q.includes("p0") || q.includes("parcel") || q.includes("ulpin") || q.includes("1420") || contextParcelId) {
+  if (q.includes("p0") || q.includes("parcel") || q.includes("ulpin") || q.includes("1420") || q.includes("1051") || contextParcelId) {
     toolsUsed.push("get_parcel_360");
     const pRes = await query(
       `SELECT p.parcel_id, p.ulpin, p.survey_number, p.area, p.land_type, p.state_code, p.district_code, p.village_code,
@@ -38,24 +39,65 @@ export async function processGovernanceAssistantQuery(
   }
 
   // 2. Tool 2: Conflict Engine
-  if (q.includes("conflict") || q.includes("flag") || q.includes("why") || q.includes("issue") || q.includes("mismatch")) {
+  if (q.includes("conflict") || q.includes("flag") || q.includes("why") || q.includes("issue") || q.includes("mismatch") || q.includes("विवाद") || q.includes("சிக்கல்")) {
     toolsUsed.push("get_data_conflicts");
   }
 
   // 3. Tool 3: Satellite Change Detection
-  if (q.includes("satellite") || q.includes("change") || q.includes("built") || q.includes("construction") || q.includes("illegal") || q.includes("unauthorized")) {
+  if (q.includes("satellite") || q.includes("change") || q.includes("built") || q.includes("construction") || q.includes("illegal") || q.includes("unauthorized") || q.includes("उपग्रह") || q.includes("செயற்கைக்கோள்")) {
     toolsUsed.push("get_satellite_changes");
   }
 
   // 4. Tool 4: SLA / Workflow check
-  if (q.includes("sla") || q.includes("pending") || q.includes("breach") || q.includes("workflow") || q.includes("application")) {
+  if (q.includes("sla") || q.includes("pending") || q.includes("breach") || q.includes("workflow") || q.includes("application") || q.includes("आवेदन") || q.includes("விண்ணப்பம்")) {
     toolsUsed.push("get_workflow_sla_status");
   }
 
-  // Generate explainable decision-support synthesis
+  // Generate explainable decision-support synthesis in user's chosen language
   let reply = "";
-  if (q.includes("why") && (q.includes("flag") || q.includes("p001") || q.includes("1420"))) {
-    reply = `**Parcel #1420 (ULPIN: IN-BR-10-00000001-62) Investigation Summary:**
+
+  if (language === "hi") {
+    if (q.includes("why") || q.includes("flag") || q.includes("विवाद") || q.includes("1420")) {
+      reply = `**भू-खंड (खेसरा) #1420 (यूलपिन: IN-BR-10-00000001-62) एआई जांच रिपोर्ट:**
+
+1. **अभिलेखीय रकबा विसंगति (उच्च गंभीरता):**
+   - **कैडस्ट्रल भू-नक्शा:** 1,420.00 वर्ग मीटर
+   - **पंजीकृत केवाला (Deed):** 1,350.00 वर्ग मीटर
+   - *अंतर:* 70 वर्ग मीटर का अंतर पाया गया है।
+
+2. **उपग्रह परिवर्तन पहचान (विश्वसनीयता: 89%):**
+   - मार्च 2024 बनाम अगस्त 2026 उपग्रह विश्लेषण में **450 वर्ग मीटर का निर्मित ढांचा** पाया गया।
+   - राजस्व वर्गीकरण **कृषि (धनहर-1)** है और नगर निकाय भवन अनुमति दर्ज नहीं है।
+
+**राजस्व अधिकारी हेतु अनुशंसित कार्रवाई:**
+- धारा 14 के तहत स्थल निरीक्षण आदेश जारी करें।
+- आवेदक से मूल दस्तावेज एवं नक्शा प्रस्तुत करने को कहें।`;
+    } else {
+      reply = `**लैंडस्टैक एआई निर्णय-समर्थन सहायक:**
+
+मैंने राजस्व, निबंधन, नगर योजना एवं उपग्रह जीआईएस रिकॉर्ड का विश्लेषण किया है:
+- **भू-खंड:** खेसरा #${parcelData?.survey_number || '1420'} (मौजा अरघवा, मधुबनी)
+- **भूमि प्रकार:** ${parcelData?.land_type || 'कृषि (धनहर-1)'}
+- **सक्रिय बैंक भार:** ${parcelData?.active_encumbrances || 0} भार
+- **डेटा सत्यनिष्ठा स्कोर:** 92% (उच्च गुणवत्ता)
+
+आप मुझसे सीमा विवाद, उपग्रह परिवर्तन या निरीक्षण ज्ञापन तैयार करने के संबंध में पूछ सकते हैं।`;
+    }
+  } else if (language === "ta") {
+    reply = `**லேண்ட்பேக் செயற்கை நுண்ணறிவு ஆய்வு அறிக்கை (LandStack AI):**
+
+புல எண் #${parcelData?.survey_number || '1420'} (யுஎல்பிஐஎன்: IN-BR-10-00000001-62):
+- **நில உரிமை:** ${parcelData?.owners?.[0] || 'பட்டாதாரர்'}
+- **நில வகைப்பாடு:** ${parcelData?.land_type || 'நஞ்சை விவசாய நிலம்'}
+- **வில்லங்க நிலை:** ${parcelData?.active_encumbrances || 0} வங்கி கடன் பொறுப்புகள்
+- **செயற்கைக்கோள் ஆய்வு:** அனுமதிக்கப்படாத 450 ச.மீ கட்டடக் கட்டுமானம் கண்டறியப்பட்டுள்ளது.
+
+**பரிந்துரைக்கப்படும் நடவடிக்கை:**
+வருவாய் ஆய்வாளர் மூலம் நேரடி கள ஆய்வு மேற்கொண்டு அறிக்கை சமர்ப்பிக்க உத்தரவிடவும்.`;
+  } else {
+    // English default
+    if (q.includes("why") && (q.includes("flag") || q.includes("p001") || q.includes("1420"))) {
+      reply = `**Parcel #1420 (ULPIN: IN-BR-10-00000001-62) Investigation Summary:**
 
 1. **Cross-Department Area Mismatch (High Severity):**
    - **Cadastral GIS:** 1,420.00 sqm
@@ -72,19 +114,19 @@ export async function processGovernanceAssistantQuery(
 **Recommended Action for Officer:**
 - Issue notice under Section 14 to verify physical boundary on-site.
 - Request applicant to produce the original registered deed and sanctioned layout.`;
-  } else if (q.includes("sla") || q.includes("breach") || q.includes("pending")) {
-    reply = `**Current Workflow & SLA Status (Active Queue):**
+    } else if (q.includes("sla") || q.includes("breach") || q.includes("pending")) {
+      reply = `**Current Workflow & SLA Status (Active Queue):**
 
 - **Total Active Applications:** 5
 - **SLA Breaches:** 1 Case flagged 🔴
   - **LS-2026-00120** (*Property Mutation* for Sita Devi): Pending for 9 days against 7-day statutory SLA. Escalated to District Revenue Officer.
 - **Approaching SLA:** 1 Case (LS-2026-00118 — Encumbrance Certificate, deadline in 12 hours).
 - **On Track:** 3 Cases (Ownership Verification, Building Permission, Land Use Certificate).`;
-  } else if (q.includes("who owns") || q.includes("owner")) {
-    const ownerName = parcelData?.owners?.[0] || "Rameshwar Prasad Yadav";
-    reply = `According to the unified Record of Rights (Jamabandi Panji), Parcel #${parcelData?.survey_number || '1420'} is registered to **${ownerName}** (Ownership Share: 100%, Raiyat Class). No legal stay orders are currently in effect.`;
-  } else {
-    reply = `**LandStack Governance Assistant (Decision-Support Mode):**
+    } else if (q.includes("who owns") || q.includes("owner")) {
+      const ownerName = parcelData?.owners?.[0] || "Rameshwar Prasad Yadav";
+      reply = `According to the unified Record of Rights (Jamabandi Panji), Parcel #${parcelData?.survey_number || '1420'} is registered to **${ownerName}** (Ownership Share: 100%, Raiyat Class). No legal stay orders are currently in effect.`;
+    } else {
+      reply = `**LandStack Governance Assistant (Decision-Support Mode):**
 
 I have analyzed the integrated records across Revenue, Registration, Planning, and Satellite GIS for your query:
 
@@ -94,6 +136,7 @@ I have analyzed the integrated records across Revenue, Registration, Planning, a
 - **Data Quality Score:** 92% (High Integrity)
 
 Feel free to ask me to explain conflicts, check satellite change comparisons, or draft an officer inspection memo.`;
+    }
   }
 
   return { reply, toolsUsed, parcelData };

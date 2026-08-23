@@ -7,6 +7,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "@/lib/api-client";
 import { useAuth } from "@/lib/security/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 // Configure worker URL for Next.js Turbopack compatibility
 if (typeof window !== "undefined") {
@@ -121,6 +122,7 @@ function MapContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -1045,7 +1047,7 @@ function MapContent() {
                         transition: "all 0.15s ease",
                       }}
                     >
-                      {tab}
+                      {t(`tab.${tab}`)}
                     </button>
                   ))}
                 </div>
@@ -1321,7 +1323,7 @@ function MapContent() {
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      <span>View Land 360°</span>
+                      <span>{t("map.view_land360")}</span>
                     </button>
                   </Link>
                 </div>

@@ -4,13 +4,13 @@ import { processGovernanceAssistantQuery } from "@/lib/ai/assistant";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { query: userQuery, role = "OFFICER", parcel_id } = body;
+    const { query: userQuery, role = "OFFICER", parcel_id, language = "en" } = body;
 
     if (!userQuery) {
       return NextResponse.json({ error: "query required" }, { status: 400 });
     }
 
-    const result = await processGovernanceAssistantQuery(userQuery, role, parcel_id);
+    const result = await processGovernanceAssistantQuery(userQuery, role, parcel_id, language);
     return NextResponse.json({
       success: true,
       query: userQuery,

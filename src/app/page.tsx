@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
 import apiClient from "@/lib/api-client";
 import * as Lucide from "lucide-react";
 
@@ -47,6 +48,7 @@ interface StatsData {
 export default function Dashboard() {
   const router = useRouter();
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [citizenApps, setCitizenApps] = useState<any[]>([]);
@@ -129,19 +131,19 @@ export default function Dashboard() {
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", width: "100%", maxWidth: 360 }}>
           <Link href="/login" className="btn btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, flex: "1 1 120px", justifyContent: "center" }}>
-            <Lucide.Repeat size={14} /> Switch Role
+            <Lucide.Repeat size={14} /> {t("nav.switch_role")}
           </Link>
           {role === "CITIZEN" ? (
             <Link href="/services" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
-              <Lucide.Plus size={14} /> Apply Service
+              <Lucide.Plus size={14} /> {t("action.apply")}
             </Link>
           ) : role === "ADMIN" || role === "AUDITOR" ? (
             <Link href="/admin/security" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
-              <Lucide.Shield size={14} /> Security & Audit
+              <Lucide.Shield size={14} /> {t("nav.security")}
             </Link>
           ) : (
             <Link href="/officer" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
-              <Lucide.Briefcase size={14} /> Officer Desk
+              <Lucide.Briefcase size={14} /> {t("nav.officer_desk")}
             </Link>
           )}
         </div>
@@ -149,15 +151,15 @@ export default function Dashboard() {
 
       {/* Hero Universal Search */}
       <div className="hero" style={{ padding: "var(--space-md) var(--space-lg)", marginBottom: "var(--space-lg)" }}>
-        <h2 className="hero-title" style={{ fontSize: 22, marginBottom: 4 }}>Land 360° Unified Registry</h2>
+        <h2 className="hero-title" style={{ fontSize: 22, marginBottom: 4 }}>{t("hero.title")}</h2>
         <p className="hero-subtitle" style={{ fontSize: 13, maxWidth: 650, margin: "0 auto 16px" }}>
-          Search any parcel to view unified land records across departments — RoR Khatiyan, deeds, encumbrance, cadastral GIS & tax.
+          {t("hero.subtitle")}
         </p>
         <form className="hero-search" onSubmit={handleSearch} style={{ maxWidth: 640 }}>
           <span className="hero-search-icon"><Lucide.Search size={18} /></span>
           <input
             className="input"
-            placeholder="Search by ULPIN (e.g. 1051), Survey No, or Raiyat..."
+            placeholder={t("hero.placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ paddingLeft: 48, fontSize: 13 }}
@@ -169,10 +171,10 @@ export default function Dashboard() {
       {role === "CITIZEN" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: <Lucide.MapPin size={20} />, value: "3", label: "My Recorded Parcels", bg: "var(--status-info-bg)", desc: "Khesra #1420, #1894, #1648" },
-            { icon: <Lucide.Ruler size={20} />, value: "12.4 Ac", label: "Total Landholding", bg: "var(--status-success-bg)", desc: "Mauza Arghawa (33)" },
-            { icon: <Lucide.ClipboardList size={20} />, value: citizenApps.length || "2", label: "Active Applications", bg: "var(--status-warning-bg)", desc: "1 Approved, 1 In Review" },
-            { icon: <Lucide.Wallet size={20} />, value: "₹ 45.00", label: "Annual Lagan / Revenue", bg: "rgba(139,92,246,0.12)", desc: "Jamabandi #45 (Paid)" },
+            { icon: <Lucide.MapPin size={20} />, value: "3", label: t("stat.recorded_parcels"), bg: "var(--status-info-bg)", desc: "Khesra #1420, #1894, #1648" },
+            { icon: <Lucide.Ruler size={20} />, value: "12.4 Ac", label: t("stat.total_landholding"), bg: "var(--status-success-bg)", desc: "Mauza Arghawa (33)" },
+            { icon: <Lucide.ClipboardList size={20} />, value: citizenApps.length || "2", label: t("stat.active_applications"), bg: "var(--status-warning-bg)", desc: "1 Approved, 1 In Review" },
+            { icon: <Lucide.Wallet size={20} />, value: "₹ 45.00", label: t("stat.annual_lagan"), bg: "rgba(139,92,246,0.12)", desc: "Jamabandi #45 (Paid)" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -276,17 +278,17 @@ export default function Dashboard() {
 
       {/* ROLE SPECIFIC QUICK ACTIONS HUB */}
       <h3 className="section-title" style={{ marginBottom: "var(--space-md)", fontSize: 16 }}>
-        {role === "CITIZEN" ? "Citizen Self-Service Workflows" : role === "ADMIN" || role === "AUDITOR" ? "System Governance & Security Hub" : "Department Operational Actions"}
+        {role === "CITIZEN" ? t("section.citizen_services") : role === "ADMIN" || role === "AUDITOR" ? "System Governance & Security Hub" : "Department Operational Actions"}
       </h3>
 
       <div className="service-grid" style={{ marginBottom: "var(--space-lg)" }}>
         {role === "CITIZEN" && [
-          { icon: "🗺️", name: "My Parcels on Cadastre", desc: "Interactive Cadastral GIS with Survey #", href: "/map" },
-          { icon: "📄", name: "RoR / Khatiyan Extract", desc: "Download certified digital Jamabandi copy", href: "/services/ror-extract" },
-          { icon: "📝", name: "Apply for Mutation", desc: "Initiate title transfer after deed purchase", href: "/services/mutation" },
-          { icon: "📋", name: "Track My Applications", desc: "Live SLA tracking with step progress", href: "/applications" },
-          { icon: "🔒", name: "Encumbrance Certificate", desc: "Verify non-encumbrance & bank charges", href: "/services/encumbrance-certificate" },
-          { icon: "🏗️", name: "Building Plan Sanction", desc: "Apply for municipal building permit", href: "/services/building-permission" },
+          { icon: "🗺️", name: t("service.my_parcels"), desc: t("service.my_parcels_desc"), href: "/map" },
+          { icon: "📄", name: t("service.ror_extract"), desc: t("service.ror_extract_desc"), href: "/services/ror-extract" },
+          { icon: "📝", name: t("service.apply_mutation"), desc: t("service.apply_mutation_desc"), href: "/services/mutation" },
+          { icon: "📋", name: t("service.track_apps"), desc: t("service.track_apps_desc"), href: "/applications" },
+          { icon: "🔒", name: t("service.encumbrance"), desc: t("service.encumbrance_desc"), href: "/services/encumbrance-certificate" },
+          { icon: "🏗️", name: t("service.building_permission"), desc: t("service.building_permission_desc"), href: "/services/building-permission" },
         ].map((s) => (
           <Link key={s.name} href={s.href} className="service-card">
             <div className="service-icon">{s.icon}</div>
