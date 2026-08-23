@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
+import apiClient from "@/lib/api-client";
 
 interface SearchResult {
   parcel_id: string;
@@ -49,9 +50,8 @@ function SearchContent() {
     setLoading(true);
     setSearched(true);
     try {
-      const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=30`);
-      const data = await res.json();
-      setResults(data.results || []);
+      const res = await apiClient.get(`/api/v1/search?q=${encodeURIComponent(q)}&limit=30`);
+      setResults(res.data.results || []);
     } catch {
       setResults([]);
     } finally {

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
 import { checkRouteAccess } from "@/lib/security/route-guard";
+import apiClient from "@/lib/api-client";
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,28 +25,22 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
     // Log security event for audit trail when access is denied
     if (!result.allowed) {
-      try {
-        fetch("/api/v1/security/policy-check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: currentUser.id,
-            userRole: currentUser.role,
-            action: `NAVIGATE_TO_${pathname.toUpperCase().replace(/\//g, "_")}`,
-            resourceType: "ROUTE",
-            resourceId: pathname,
-            userScope: {
-              state: currentUser.stateCode,
-              district: currentUser.districtCode,
-              circle: currentUser.circleCode,
-            },
-            resourceScope: {
-              state: "BR",
-              district: "BR-10",
-            },
-          }),
-        }).catch(() => {});
-      } catch {}
+      apiClient.post("/api/v1/security/policy-check", {
+        userId: currentUser.id,
+        userRole: currentUser.role,
+        action: `NAVIGATE_TO_${pathname.toUpperCase().replace(/\//g, "_")}`,
+        resourceType: "ROUTE",
+        resourceId: pathname,
+        userScope: {
+          state: currentUser.stateCode,
+          district: currentUser.districtCode,
+          circle: currentUser.circleCode,
+        },
+        resourceScope: {
+          state: "BR",
+          district: "BR-10",
+        },
+      }).catch(() => {});
     }
   }, [pathname, currentUser]);
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -53,11 +54,10 @@ export default function ApplicationsPage() {
           : "/api/v1/applications?department=Revenue")
         : "/api/v1/applications";
 
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.applications?.length > 0) {
-        setApplications(data.applications);
-        setSelectedId(data.applications[0].application_no);
+      const res = await apiClient.get(url);
+      if (res.data?.applications?.length > 0) {
+        setApplications(res.data.applications);
+        setSelectedId(res.data.applications[0].application_no);
       }
     } catch (err) {
       console.error("Failed to load applications:", err);
@@ -68,9 +68,8 @@ export default function ApplicationsPage() {
 
   const fetchDetail = useCallback(async (appNo: string) => {
     try {
-      const res = await fetch(`/api/v1/applications/${appNo}`);
-      const data = await res.json();
-      setSelectedDetail(data);
+      const res = await apiClient.get(`/api/v1/applications/${appNo}`);
+      setSelectedDetail(res.data);
     } catch (err) {
       console.error("Failed to fetch detail:", err);
     }

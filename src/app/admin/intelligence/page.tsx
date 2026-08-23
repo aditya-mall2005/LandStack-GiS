@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SAMPLE_DOCUMENTS } from "@/lib/ai/document-extract";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -29,20 +30,18 @@ export default function IntelligenceDashboard() {
   ]);
 
   useEffect(() => {
-    fetch("/api/v1/ai/satellite-changes").then((r) => r.json()).then((d) => setSatelliteDetections(d.detections || [])).catch(console.error);
-    fetch("/api/v1/ai/anomalies").then((r) => r.json()).then((d) => setAnomalies(d.anomalies || [])).catch(console.error);
+    apiClient.get("/api/v1/ai/satellite-changes").then((r) => setSatelliteDetections(r.data.detections || [])).catch(console.error);
+    apiClient.get("/api/v1/ai/anomalies").then((r) => setAnomalies(r.data.anomalies || [])).catch(console.error);
   }, []);
 
   const handleDocumentExtract = async () => {
     setExtracting(true);
     try {
-      const res = await fetch("/api/v1/ai/document-extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_type: "SALE_DEED", document_name: "Reg_SaleDeed_Basopatti_1420.pdf" }),
+      const res = await apiClient.post("/api/v1/ai/document-extract", {
+        document_type: "SALE_DEED",
+        document_name: "Reg_SaleDeed_Basopatti_1420.pdf"
       });
-      const data = await res.json();
-      setDocResult(data.data);
+      setDocResult(res.data.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -58,13 +57,11 @@ export default function IntelligenceDashboard() {
     setChatLoading(true);
 
     try {
-      const res = await fetch("/api/v1/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userQ, role: "OFFICER" }),
+      const res = await apiClient.post("/api/v1/ai/chat", {
+        query: userQ,
+        role: "OFFICER"
       });
-      const data = await res.json();
-      setChatHistory((prev) => [...prev, { role: "assistant", content: data.reply, tools: data.tools_executed }]);
+      setChatHistory((prev) => [...prev, { role: "assistant", content: res.data.reply, tools: res.data.tools_executed }]);
     } catch (err) {
       console.error(err);
     } finally {

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { ROLE_DEFINITIONS } from "@/lib/security/rbac-matrix";
 import { UserRole, Permission } from "@/lib/security/types";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -55,9 +56,8 @@ export default function SecurityAuditConsole() {
       let url = "/api/v1/security/audit-logs?";
       if (roleFilter !== "ALL") url += `role=${roleFilter}&`;
       if (resultFilter !== "ALL") url += `result=${resultFilter}&`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setAuditLogs(data.logs || []);
+      const res = await apiClient.get(url);
+      setAuditLogs(res.data.logs || []);
     } catch (err) {
       console.error(err);
     }
@@ -65,9 +65,8 @@ export default function SecurityAuditConsole() {
 
   const fetchThreats = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/security/threats");
-      const data = await res.json();
-      setThreats(data.threats || []);
+      const res = await apiClient.get("/api/v1/security/threats");
+      setThreats(res.data.threats || []);
     } catch (err) {
       console.error(err);
     }
@@ -75,9 +74,8 @@ export default function SecurityAuditConsole() {
 
   const fetchConsents = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/security/consents");
-      const data = await res.json();
-      setConsents(data.consents || []);
+      const res = await apiClient.get("/api/v1/security/consents");
+      setConsents(res.data.consents || []);
     } catch (err) {
       console.error(err);
     }
@@ -85,9 +83,8 @@ export default function SecurityAuditConsole() {
 
   const fetchPiiPreview = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/security/mask-preview?id=1420");
-      const data = await res.json();
-      setPiiData(data.projections);
+      const res = await apiClient.get("/api/v1/security/mask-preview?id=1420");
+      setPiiData(res.data.projections);
     } catch (err) {
       console.error(err);
     }
@@ -103,25 +100,20 @@ export default function SecurityAuditConsole() {
   const handleEvaluateSimulator = async () => {
     setEvaluating(true);
     try {
-      const res = await fetch("/api/v1/security/policy-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          principal: {
-            user_id: `USR-${simRole.slice(0, 3)}-01`,
-            name: `${ROLE_DEFINITIONS[simRole]?.title} (${simState})`,
-            role: simRole,
-            department: ROLE_DEFINITIONS[simRole]?.department,
-            scope: { state_code: simState, district_code: simDistrict }
-          },
-          action: simAction,
-          resource_type: "PARCEL",
-          resource_id: "IN-BR-10-00000001-62",
-          target_scope: { state_code: targetState, district_code: targetDistrict }
-        })
+      const res = await apiClient.post("/api/v1/security/policy-check", {
+        principal: {
+          user_id: `USR-${simRole.slice(0, 3)}-01`,
+          name: `${ROLE_DEFINITIONS[simRole]?.title} (${simState})`,
+          role: simRole,
+          department: ROLE_DEFINITIONS[simRole]?.department,
+          scope: { state_code: simState, district_code: simDistrict }
+        },
+        action: simAction,
+        resource_type: "PARCEL",
+        resource_id: "IN-BR-10-00000001-62",
+        target_scope: { state_code: targetState, district_code: targetDistrict }
       });
-      const data = await res.json();
-      setSimResult(data);
+      setSimResult(res.data);
       await fetchAuditLogs(); // Refresh audit table with the newly logged check
     } catch (err) {
       console.error(err);
@@ -132,10 +124,9 @@ export default function SecurityAuditConsole() {
 
   const handleRevokeConsent = async (consentNo: string) => {
     try {
-      await fetch("/api/v1/security/consents", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consent_no: consentNo, status: "REVOKED" })
+      await apiClient.patch("/api/v1/security/consents", {
+        consent_no: consentNo,
+        status: "REVOKED"
       });
       await fetchConsents();
     } catch (err) {

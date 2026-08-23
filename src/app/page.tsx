@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
+import apiClient from "@/lib/api-client";
 
 interface StatsData {
   overview: {
@@ -38,15 +39,15 @@ export default function Dashboard() {
   const [citizenApps, setCitizenApps] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then(setStats)
+    apiClient
+      .get("/api/stats")
+      .then((res) => setStats(res.data))
       .catch(console.error);
 
-    fetch("/api/v1/applications")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.applications) setCitizenApps(d.applications);
+    apiClient
+      .get("/api/v1/applications")
+      .then((res) => {
+        if (res.data?.applications) setCitizenApps(res.data.applications);
       })
       .catch(console.error);
   }, []);

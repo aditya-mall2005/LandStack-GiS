@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { calculateSlaStatus } from "@/lib/workflow";
 import { useAuth } from "@/lib/security/auth-context";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -47,12 +48,11 @@ export default function OfficerPortal() {
     try {
       setLoading(true);
       const url = selectedDept === "All" ? "/api/v1/applications" : `/api/v1/applications?department=${selectedDept}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.applications) {
-        setApplications(data.applications);
-        if (!selectedAppNo && data.applications.length > 0) {
-          setSelectedAppNo(data.applications[0].application_no);
+      const res = await apiClient.get(url);
+      if (res.data?.applications) {
+        setApplications(res.data.applications);
+        if (!selectedAppNo && res.data.applications.length > 0) {
+          setSelectedAppNo(res.data.applications[0].application_no);
         }
       }
     } catch (err) {
@@ -64,15 +64,13 @@ export default function OfficerPortal() {
 
   const fetchDetail = useCallback(async (appNo: string) => {
     try {
-      const res = await fetch(`/api/v1/applications/${appNo}`);
-      const data = await res.json();
-      setSelectedDetail(data);
+      const res = await apiClient.get(`/api/v1/applications/${appNo}`);
+      setSelectedDetail(res.data);
 
-      if (data.application?.parcel_id || data.application?.parcel_ulpin) {
-        const pId = data.application.parcel_id || data.application.parcel_ulpin;
-        const pRes = await fetch(`/api/parcels/${pId}`);
-        const pData = await pRes.json();
-        setParcel360(pData);
+      if (res.data?.application?.parcel_id || res.data?.application?.parcel_ulpin) {
+        const pId = res.data.application.parcel_id || res.data.application.parcel_ulpin;
+        const pRes = await apiClient.get(`/api/parcels/${pId}`);
+        setParcel360(pRes.data);
       }
     } catch (err) {
       console.error("Failed to fetch detail:", err);
@@ -93,20 +91,16 @@ export default function OfficerPortal() {
     if (!selectedAppNo) return;
     try {
       setActionLoading(true);
-      const res = await fetch(`/api/v1/applications/${selectedAppNo}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: newStatus,
-          officer_name: currentUser.name || "Land Officer Vikram Singh",
-          role: currentUser.role || "REVENUE_OFFICER",
-          department: currentUser.department || (selectedDept === "All" ? "Revenue" : selectedDept),
-          comments: actionComments,
-          ...extra
-        }),
+      const res = await apiClient.patch(`/api/v1/applications/${selectedAppNo}`, {
+        status: newStatus,
+        officer_name: currentUser.name || "Land Officer Vikram Singh",
+        role: currentUser.role || "REVENUE_OFFICER",
+        department: currentUser.department || (selectedDept === "All" ? "Revenue" : selectedDept),
+        comments: actionComments,
+        ...extra
       });
 
-      if (res.ok) {
+      if (res.status === 200) {
         setModalMode(null);
         setActionRemarks("");
         await fetchApplications();

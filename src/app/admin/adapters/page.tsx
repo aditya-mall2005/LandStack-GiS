@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { STATE_ADAPTER_REGISTRY } from "@/lib/adapters";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -32,13 +33,11 @@ export default function AdaptersStudio() {
     try {
       setTransforming(true);
       const parsed = JSON.parse(rawJsonText);
-      const res = await fetch("/api/v1/adapters/normalize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state_code: selectedState, payload: parsed }),
+      const res = await apiClient.post("/api/v1/adapters/normalize", {
+        state_code: selectedState,
+        payload: parsed
       });
-      const data = await res.json();
-      setResult(data);
+      setResult(res.data);
     } catch (err: any) {
       alert("Invalid JSON format: " + err.message);
     } finally {
@@ -48,9 +47,8 @@ export default function AdaptersStudio() {
 
   const testDepartmentApi = async (deptId: string, endpoint: string) => {
     try {
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      setApiResponses((prev) => ({ ...prev, [deptId]: data }));
+      const res = await apiClient.get(endpoint);
+      setApiResponses((prev) => ({ ...prev, [deptId]: res.data }));
     } catch (err: any) {
       setApiResponses((prev) => ({ ...prev, [deptId]: { error: err.message } }));
     }

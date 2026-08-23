@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -22,9 +23,8 @@ export default function ConflictsPage() {
     try {
       setLoading(true);
       const url = severityFilter === "ALL" ? "/api/v1/ai/conflicts" : `/api/v1/ai/conflicts?severity=${severityFilter}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setConflicts(data.conflicts || []);
+      const res = await apiClient.get(url);
+      setConflicts(res.data.conflicts || []);
     } catch (err) {
       console.error("Failed to load conflicts:", err);
     } finally {
@@ -38,12 +38,11 @@ export default function ConflictsPage() {
 
   const resolveConflict = async (conflictId: string) => {
     try {
-      const res = await fetch("/api/v1/ai/conflicts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conflict_id: conflictId, resolved: true }),
+      const res = await apiClient.patch("/api/v1/ai/conflicts", {
+        conflict_id: conflictId,
+        resolved: true
       });
-      if (res.ok) {
+      if (res.status === 200) {
         setActionMessage("Conflict marked as investigated and resolved.");
         setTimeout(() => setActionMessage(null), 3000);
         await fetchConflicts();

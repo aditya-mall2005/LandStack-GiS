@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import apiClient from "@/lib/api-client";
 
 const SERVICE_INFO: Record<string, { name: string; icon: string; fields: string[] }> = {
   "ownership-verification": { name: "Ownership Verification", icon: "✓", fields: ["parcel", "purpose"] },
@@ -43,26 +44,18 @@ function ServiceFormContent() {
     setError(null);
 
     try {
-      const res = await fetch("/api/v1/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_type: type,
-          parcel_ulpin: form.parcel_ulpin,
-          applicant_name: "Ramesh Kumar",
-          applicant_email: "ramesh.kumar@example.com",
-          applicant_phone: "+91-9876543210",
-          purpose: form.purpose || form.mutation_reason || "Citizen service request",
-          details: form,
-          priority: "NORMAL",
-        }),
+      const res = await apiClient.post("/api/v1/services", {
+        service_type: type,
+        parcel_ulpin: form.parcel_ulpin,
+        applicant_name: "Ramesh Kumar",
+        applicant_email: "ramesh.kumar@example.com",
+        applicant_phone: "+91-9876543210",
+        purpose: form.purpose || form.mutation_reason || "Citizen service request",
+        details: form,
+        priority: "NORMAL",
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit application");
-      }
-
+      const data = res.data;
       setAppId(data.application?.application_no || `LS-2026-${Math.floor(10000 + Math.random() * 90000)}`);
       setSubmitted(true);
     } catch (err: unknown) {

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -315,9 +316,8 @@ function MapContent() {
       setLoading(true);
       setActiveTab("overview");
       try {
-        const res = await fetch(`/api/parcels/${parcelId}`);
-        const data = await res.json();
-        setSelectedParcel(data);
+        const res = await apiClient.get(`/api/parcels/${parcelId}`);
+        setSelectedParcel(res.data);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     });
@@ -354,8 +354,8 @@ function MapContent() {
     try {
       let geojson = cachedGeoJson.current;
       if (!geojson) {
-        const res = await fetch("/api/parcels?limit=1000");
-        geojson = await res.json();
+        const res = await apiClient.get("/api/parcels?limit=1000");
+        geojson = res.data;
         cachedGeoJson.current = geojson;
       }
       setupParcelLayers(map, geojson);
@@ -374,8 +374,8 @@ function MapContent() {
     try {
       let geojson = cachedLayersData.current[layerId];
       if (!geojson) {
-        const res = await fetch(`/api/v1/layers/${layerId}`);
-        geojson = await res.json();
+        const res = await apiClient.get(`/api/v1/layers/${layerId}`);
+        geojson = res.data;
         cachedLayersData.current[layerId] = geojson;
       }
 
@@ -516,9 +516,8 @@ function MapContent() {
   const handleSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return; }
     try {
-      const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=8`);
-      const data = await res.json();
-      setSearchResults(data.results || []);
+      const res = await apiClient.get(`/api/v1/search?q=${encodeURIComponent(q)}&limit=8`);
+      setSearchResults(res.data.results || []);
       setShowSearch(true);
     } catch { setSearchResults([]); }
   }, []);
@@ -536,9 +535,8 @@ function MapContent() {
       setLoading(true);
       setActiveTab("overview");
       try {
-        const res = await fetch(`/api/parcels/${parcelId}`);
-        const data = await res.json();
-        setSelectedParcel(data);
+        const res = await apiClient.get(`/api/parcels/${parcelId}`);
+        setSelectedParcel(res.data);
       } catch (err) {
         console.error(err);
       } finally {

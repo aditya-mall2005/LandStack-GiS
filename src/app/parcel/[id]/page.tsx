@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import apiClient from "@/lib/api-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -46,10 +47,16 @@ export default function ParcelPage() {
   useEffect(() => {
     if (!params.id) return;
     setLoading(true);
-    fetch(`/api/parcels/${params.id}`)
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    apiClient
+      .get(`/api/parcels/${params.id}`)
+      .then((res) => {
+        setData(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
   }, [params.id]);
 
   if (loading) {
