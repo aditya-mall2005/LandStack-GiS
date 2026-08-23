@@ -125,7 +125,6 @@ function MapContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
-  const layerPopupRef = useRef<maplibregl.Popup | null>(null);
   const cachedGeoJson = useRef<any>(null);
   const cachedSpatialLayers = useRef<Record<string, any>>({});
 
@@ -144,7 +143,7 @@ function MapContent() {
     "village-boundary": false,
   });
   const [activeGovLayers, setActiveGovLayers] = useState<Record<string, boolean>>({
-    "land-use": true,
+    "land-use": false,
     "master-plan": false,
     "building-permits": false,
     encumbrance: false,
@@ -234,23 +233,24 @@ function MapContent() {
         });
       }
 
-      // Interactive hover tooltip for governance layers
+      // Interactive hover tooltip for governance layers (only active when parcels layer is off)
       (map as any).off("mousemove", `${sourceId}-fill`);
       (map as any).on("mousemove", `${sourceId}-fill`, (e: any) => {
+        if (activeBaseLayersRef.current?.parcels) return;
         const f = e.features?.[0];
         if (!f) return;
         const pr = f.properties || {};
-        if (layerPopupRef.current) layerPopupRef.current.remove();
+        if (popupRef.current) popupRef.current.remove();
 
-        let title = layerId.replace("-", " ").toUpperCase();
-        let subtitle = pr.zone_name || pr.village_name || pr.applicant || pr.institution || pr.court || pr.road_name || pr.utility_name || "Layer Area";
+        const title = layerId.replace("-", " ").toUpperCase();
+        const subtitle = pr.zone_name || pr.village_name || pr.applicant || pr.institution || pr.court || pr.road_name || pr.utility_name || "Layer Area";
 
-        layerPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+        popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
           .setLngLat(e.lngLat)
           .setHTML(`
-            <div style="font-family:Inter,sans-serif;font-size:11px;padding:4px 8px;background:#0B0F19;color:#f8fafc;border-radius:6px;border:1px solid ${color}">
+            <div style="font-family:Inter,sans-serif;font-size:11px;padding:6px 8px;background:#ffffff;color:#0f172a;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.1)">
               <div style="font-weight:700;color:${color}">${title}</div>
-              <div style="color:#e2e8f0;font-size:10px;margin-top:2px">${subtitle}</div>
+              <div style="color:#64748b;font-size:10px;margin-top:2px">${subtitle}</div>
             </div>
           `)
           .addTo(map);
@@ -258,9 +258,9 @@ function MapContent() {
 
       (map as any).off("mouseleave", `${sourceId}-fill`);
       (map as any).on("mouseleave", `${sourceId}-fill`, () => {
-        if (layerPopupRef.current) {
-          layerPopupRef.current.remove();
-          layerPopupRef.current = null;
+        if (popupRef.current) {
+          popupRef.current.remove();
+          popupRef.current = null;
         }
       });
     } catch (err) {
@@ -272,9 +272,9 @@ function MapContent() {
     if (!map) return;
     const sourceId = `layer-${layerId}`;
     try {
-      if (layerPopupRef.current) {
-        layerPopupRef.current.remove();
-        layerPopupRef.current = null;
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
       }
       if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
       if (map.getLayer(`${sourceId}-outline`)) map.removeLayer(`${sourceId}-outline`);
