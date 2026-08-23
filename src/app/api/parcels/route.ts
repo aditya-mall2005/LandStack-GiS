@@ -1,10 +1,10 @@
 /**
  * GET /api/parcels
- * Returns parcels as GeoJSON FeatureCollection
+ * Returns parcels as GeoJSON FeatureCollection with accurate database issues and centroids
  * 
  * Query params:
  *   bbox   — minLng,minLat,maxLng,maxLat (bounding box filter)
- *   limit  — max features (default 500)
+ *   limit  — max features (default 1000)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,49 +13,72 @@ import { query } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const bbox = searchParams.get("bbox");
-  const limit = Math.min(parseInt(searchParams.get("limit") || "500"), 2000);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "1000"), 3000);
 
   try {
     let sql: string;
     let params: unknown[];
 
+    const baseSelect = `
+      SELECT
+        p.parcel_id,
+        p.ulpin,
+        p.survey_number,
+        p.area,
+        p.area_unit,
+        p.land_type,
+        p.state_code,
+        p.district_code,
+        p.village_code,
+        p.source_system,
+        ST_AsGeoJSON(p.geom)::json AS geometry,
+        ST_X(ST_Centroid(p.geom)) AS centroid_lng,
+        ST_Y(ST_Centroid(p.geom)) AS centroid_lat,
+        CASE 
+          WHEN c.conflict_id IS NOT NULL THEN true 
+          WHEN d.dispute_id IS NOT NULL THEN true 
+          ELSE false 
+        END AS has_conflict,
+        c.conflict_type,
+        d.dispute_type,
+        bp.status AS bp_status,
+        pt.status AS pt_status
+      FROM gis.parcels p
+      LEFT JOIN (
+        SELECT DISTINCT ON (parcel_id) parcel_id, conflict_id, conflict_type 
+        FROM land.data_conflicts 
+        WHERE resolved = false
+      ) c ON c.parcel_id = p.parcel_id
+      LEFT JOIN (
+        SELECT DISTINCT ON (parcel_id) parcel_id, dispute_id, dispute_type 
+        FROM governance.disputes 
+        WHERE status = 'ACTIVE'
+      ) d ON d.parcel_id = p.parcel_id
+      LEFT JOIN (
+        SELECT DISTINCT ON (parcel_id) parcel_id, status 
+        FROM governance.building_permissions 
+        WHERE status = 'PENDING'
+      ) bp ON bp.parcel_id = p.parcel_id
+      LEFT JOIN (
+        SELECT DISTINCT ON (parcel_id) parcel_id, status 
+        FROM governance.property_tax 
+        WHERE status = 'UNPAID'
+      ) pt ON pt.parcel_id = p.parcel_id
+    `;
+
     if (bbox) {
       const [minLng, minLat, maxLng, maxLat] = bbox.split(",").map(Number);
       sql = `
-        SELECT
-          parcel_id,
-          ulpin,
-          survey_number,
-          area,
-          area_unit,
-          land_type,
-          state_code,
-          district_code,
-          village_code,
-          source_system,
-          ST_AsGeoJSON(geom)::json AS geometry
-        FROM gis.parcels
-        WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
+        ${baseSelect}
+        WHERE p.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
+        ORDER BY p.survey_number ASC
         LIMIT $5
       `;
       params = [minLng, minLat, maxLng, maxLat, limit];
     } else {
       sql = `
-        SELECT
-          parcel_id,
-          ulpin,
-          survey_number,
-          area,
-          area_unit,
-          land_type,
-          state_code,
-          district_code,
-          village_code,
-          source_system,
-          ST_AsGeoJSON(geom)::json AS geometry,
-          ST_X(ST_Centroid(geom)) AS centroid_lng,
-          ST_Y(ST_Centroid(geom)) AS centroid_lat
-        FROM gis.parcels
+        ${baseSelect}
+        ORDER BY p.survey_number ASC
         LIMIT $1
       `;
       params = [limit];
@@ -66,47 +89,35 @@ export async function GET(request: NextRequest) {
     const featureCollection = {
       type: "FeatureCollection",
       features: result.rows.map((row) => {
-        const sNum = String(row.survey_number || "");
-        let hasConflict = false;
         let issueType: string | null = null;
         let issueIcon: string | null = null;
         let issueColor: string | null = null;
         let issueLabel: string | null = null;
 
-        if (["1022", "1011", "1038", "1420"].includes(sNum)) {
-          hasConflict = true;
+        if (row.conflict_type === "BOUNDARY_OVERLAP" || row.has_conflict) {
           issueType = "OWNERSHIP_CONFLICT";
           issueIcon = "🔴";
           issueColor = "#ef4444";
-          issueLabel = "Ownership Conflict";
-        } else if (["1032", "1033", "1002"].includes(sNum)) {
-          hasConflict = true;
-          issueType = "ENCROACHMENT";
-          issueIcon = "🔺";
-          issueColor = "#f97316";
-          issueLabel = "Encroachment Detected";
-        } else if (["1048", "1058"].includes(sNum)) {
-          issueType = "UNREGISTERED_LAND";
-          issueIcon = "🏛️";
-          issueColor = "#eab308";
-          issueLabel = "Unregistered Land";
-        } else if (["1040", "1043"].includes(sNum)) {
-          hasConflict = true;
-          issueType = "LAND_USE_VIOLATION";
+          issueLabel = "Ownership / Boundary Conflict";
+        } else if (row.dispute_type === "TITLE_SUIT") {
+          issueType = "DISPUTE";
           issueIcon = "⚖️";
           issueColor = "#a855f7";
-          issueLabel = "Land Use Violation";
-        } else if (["1047", "1037"].includes(sNum)) {
-          issueType = "TAX_PENDING";
-          issueIcon = "🔵";
-          issueColor = "#3b82f6";
-          issueLabel = "Tax Pending";
-        } else if (["1023", "1021"].includes(sNum)) {
+          issueLabel = "Title Dispute";
+        } else if (row.bp_status === "PENDING") {
           issueType = "BUILDING_WITHOUT_PERMIT";
           issueIcon = "🏗️";
           issueColor = "#06b6d4";
           issueLabel = "Building Without Permit";
+        } else if (row.pt_status === "UNPAID") {
+          issueType = "TAX_PENDING";
+          issueIcon = "💰";
+          issueColor = "#3b82f6";
+          issueLabel = "Tax Pending";
         }
+
+        const cLng = Number(row.centroid_lng);
+        const cLat = Number(row.centroid_lat);
 
         return {
           type: "Feature",
@@ -124,8 +135,8 @@ export async function GET(request: NextRequest) {
             district_code: row.district_code,
             village_code: row.village_code,
             source_system: row.source_system,
-            centroid: [Number(row.centroid_lng || 86.12), Number(row.centroid_lat || 26.36)],
-            has_conflict: hasConflict,
+            centroid: [cLng || 86.12, cLat || 26.36],
+            has_conflict: Boolean(row.has_conflict),
             issue_type: issueType,
             issue_icon: issueIcon,
             issue_color: issueColor,
