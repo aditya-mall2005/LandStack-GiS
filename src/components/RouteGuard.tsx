@@ -17,19 +17,23 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     // Log security event for audit trail when access is denied
     if (isMounted && !accessState.allowed) {
       apiClient.post("/api/v1/security/policy-check", {
-        userId: currentUser.id,
-        userRole: currentUser.role,
-        action: `NAVIGATE_TO_${pathname.toUpperCase().replace(/\//g, "_")}`,
-        resourceType: "ROUTE",
-        resourceId: pathname,
-        userScope: {
-          state: currentUser.stateCode,
-          district: currentUser.districtCode,
-          circle: currentUser.circleCode,
+        principal: {
+          user_id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role,
+          department: currentUser.department || "Revenue",
+          scope: {
+            state_code: currentUser.stateCode || "BR",
+            district_code: currentUser.districtCode || "BR-10",
+            circle_code: currentUser.circleCode,
+          },
         },
-        resourceScope: {
-          state: "BR",
-          district: "BR-10",
+        action: `NAVIGATE_TO_${pathname.toUpperCase().replace(/\//g, "_")}`,
+        resource_type: "ROUTE",
+        resource_id: pathname,
+        target_scope: {
+          state_code: "BR",
+          district_code: "BR-10",
         },
       }).catch(() => {});
     }

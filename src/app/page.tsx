@@ -362,7 +362,7 @@ export default function Dashboard() {
       </div>
 
       {/* TWO-COLUMN ROLE-AWARE ACTIVITY & QUEUE */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "var(--space-md)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}>
         {/* Left Column: Role-Tailored Activity Queue */}
         <div className="card">
           <div className="card-header">

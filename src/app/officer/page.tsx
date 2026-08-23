@@ -62,8 +62,14 @@ export default function OfficerPortal() {
 
       if (res.data?.application?.parcel_id || res.data?.application?.parcel_ulpin) {
         const pId = res.data.application.parcel_id || res.data.application.parcel_ulpin;
-        const pRes = await apiClient.get(`/api/parcels/${pId}`);
-        setParcel360(pRes.data);
+        try {
+          const pRes = await apiClient.get(`/api/parcels/${pId}`);
+          setParcel360(pRes.data);
+        } catch {
+          setParcel360(null);
+        }
+      } else {
+        setParcel360(null);
       }
     } catch (err) {
       console.error("Failed to fetch detail:", err);
@@ -102,8 +108,14 @@ export default function OfficerPortal() {
           setSelectedDetail(res.data);
           if (res.data?.application?.parcel_id || res.data?.application?.parcel_ulpin) {
             const pId = res.data.application.parcel_id || res.data.application.parcel_ulpin;
-            const pRes = await apiClient.get(`/api/parcels/${pId}`);
-            if (isMounted) setParcel360(pRes.data);
+            try {
+              const pRes = await apiClient.get(`/api/parcels/${pId}`);
+              if (isMounted) setParcel360(pRes.data);
+            } catch {
+              if (isMounted) setParcel360(null);
+            }
+          } else {
+            if (isMounted) setParcel360(null);
           }
         }
       } catch (err) {

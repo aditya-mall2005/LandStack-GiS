@@ -82,7 +82,7 @@ export default function SecurityAuditConsole() {
           apiClient.get(url),
           apiClient.get("/api/v1/security/threats"),
           apiClient.get("/api/v1/security/consents"),
-          apiClient.get("/api/v1/security/mask-preview?id=1420"),
+          apiClient.get("/api/v1/security/mask-preview?id=1051"),
         ]);
 
         if (isMounted) {
