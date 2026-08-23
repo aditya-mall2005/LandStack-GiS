@@ -177,7 +177,7 @@ function MobileHeader({ onToggleMenu, isOpen }: { onToggleMenu: () => void; isOp
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <LanguageSelector variant="compact" />
+        <LanguageSelector variant="pill" />
         <Link href="/login" style={{ textDecoration: "none" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-input)", border: "1px solid var(--border-default)", borderRadius: 20, padding: "4px 8px", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />

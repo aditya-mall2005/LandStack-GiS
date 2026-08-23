@@ -1148,3 +1148,44 @@ a:hover { text-decoration: underline; }
 .maplibregl-popup-tip {
   border-top-color: var(--bg-card) !important;
 }
+
+/* ── Language Selector Popover ── */
+.language-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 250px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 1100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.language-dropdown-sidebar {
+  top: auto;
+  bottom: 0;
+  left: calc(100% + 10px);
+  right: auto;
+}
+
+@media (max-width: 768px) {
+  .language-dropdown-menu {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: 80vh !important;
+    z-index: 2200 !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35) !important;
+  }
+}
+
