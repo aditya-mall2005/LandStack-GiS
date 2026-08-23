@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { calculateSlaStatus } from "@/lib/workflow";
+import { useAuth } from "@/lib/security/auth-context";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -20,6 +21,7 @@ const STATUS_MAP: Record<string, { label: string; class: string }> = {
 };
 
 export default function OfficerPortal() {
+  const { currentUser } = useAuth();
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedAppNo, setSelectedAppNo] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -27,6 +29,14 @@ export default function OfficerPortal() {
   const [selectedDept, setSelectedDept] = useState("All");
   const [actionLoading, setActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Set default department from persona if relevant
+  useEffect(() => {
+    if (currentUser.role === "REGISTRATION_OFFICER") setSelectedDept("Registration");
+    else if (currentUser.role === "PLANNING_OFFICER") setSelectedDept("Planning");
+    else if (currentUser.role === "TAX_OFFICER") setSelectedDept("Municipality");
+    else if (currentUser.role === "REVENUE_OFFICER") setSelectedDept("Revenue");
+  }, [currentUser]);
 
   // Action Modal State
   const [modalMode, setModalMode] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | "ESCALATE" | null>(null);
@@ -88,9 +98,9 @@ export default function OfficerPortal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
-          officer_name: "Land Officer Vikram Singh",
-          role: "LAND_OFFICER",
-          department: selectedDept === "All" ? "Revenue" : selectedDept,
+          officer_name: currentUser.name || "Land Officer Vikram Singh",
+          role: currentUser.role || "REVENUE_OFFICER",
+          department: currentUser.department || (selectedDept === "All" ? "Revenue" : selectedDept),
           comments: actionComments,
           ...extra
         }),
@@ -123,19 +133,28 @@ export default function OfficerPortal() {
       <div className="page-header">
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 24 }}>👨‍💼</span>
+            <span style={{ fontSize: 24 }}>{currentUser.icon || "👨‍💼"}</span>
             <h1 className="page-title">Department Officer Portal & Workflow Engine</h1>
           </div>
           <p className="page-subtitle">Multi-department statutory case review, parcel-linked compliance, and immutable audit trailing.</p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(15, 23, 42, 0.8)", border: "1px solid var(--border-color)", padding: "4px 12px", borderRadius: "var(--radius-md)" }}>
+            <span style={{ fontSize: 16 }}>{currentUser.icon}</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#f8fafc" }}>{currentUser.name}</div>
+              <div style={{ fontSize: 10, color: "var(--text-accent)" }}>{currentUser.title.split("(")[0]}</div>
+            </div>
+            <Link href="/login" className="badge badge-info" style={{ textDecoration: "none", fontSize: 10, cursor: "pointer" }}>
+              Switch ⇄
+            </Link>
+          </div>
           <Link href="/officer/conflicts" className="btn btn-outline" style={{ fontSize: 12 }}>
             ⚠️ Conflicts ({3})
           </Link>
           <Link href="/admin/intelligence" className="btn btn-primary" style={{ fontSize: 12 }}>
             🧠 AI Intelligence
           </Link>
-          <span className="badge badge-success">● Live Gateway</span>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { AuthProvider, useAuth } from "@/lib/security/auth-context";
 import "./globals.css";
 
 const NAV_SECTIONS = [
@@ -41,6 +42,7 @@ const NAV_SECTIONS = [
 
 function Sidebar() {
   const pathname = usePathname();
+  const { currentUser, getInitials } = useAuth();
 
   return (
     <aside className="app-sidebar">
@@ -73,11 +75,27 @@ function Sidebar() {
 
       <div className="sidebar-footer">
         <Link href="/login" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-          <div className="sidebar-user" style={{ cursor: "pointer", transition: "background 0.2s" }}>
-            <div className="sidebar-avatar">VS</div>
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">Vikram Singh</div>
-              <div className="sidebar-user-role">Revenue Officer (Switch) ⇄</div>
+          <div
+            className="sidebar-user"
+            style={{
+              cursor: "pointer",
+              transition: "background 0.2s",
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "var(--radius-md)",
+              padding: "10px",
+            }}
+          >
+            <div className="sidebar-avatar" style={{ background: "var(--brand-primary)", color: "#fff", fontWeight: 700 }}>
+              {getInitials(currentUser.name)}
+            </div>
+            <div className="sidebar-user-info" style={{ overflow: "hidden" }}>
+              <div className="sidebar-user-name" style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                <span>{currentUser.name}</span>
+              </div>
+              <div className="sidebar-user-role" style={{ fontSize: 11, color: "var(--text-accent)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                {currentUser.title.split("/")[0].trim()} • Switch ⇄
+              </div>
             </div>
           </div>
         </Link>
@@ -101,10 +119,12 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="app-shell">
-          <Sidebar />
-          <main className="app-main">{children}</main>
-        </div>
+        <AuthProvider>
+          <div className="app-shell">
+            <Sidebar />
+            <main className="app-main">{children}</main>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

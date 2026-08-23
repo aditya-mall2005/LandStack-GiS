@@ -2,131 +2,147 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const DEMO_ROLES = [
-  {
-    role: "CITIZEN",
-    name: "Ramesh Kumar",
-    title: "Citizen / Land Owner",
-    department: "Citizen Services",
-    icon: "👨‍🌾",
-    jurisdiction: "Basopatti, Madhubani (Bihar)",
-    description: "View owned parcels, download digital RoR/Khatiyan, track applications, and submit mutation requests.",
-    landingUrl: "/services"
-  },
-  {
-    role: "LAND_OFFICER",
-    name: "Vikram Singh",
-    title: "Revenue Circle Officer (CO)",
-    department: "Revenue & Land Records",
-    icon: "👨‍💼",
-    jurisdiction: "Basopatti Circle, Madhubani",
-    description: "Verify land titles, inspect Jamabandi records, approve mutations, and resolve cross-department data conflicts.",
-    landingUrl: "/officer"
-  },
-  {
-    role: "REGISTRATION_OFFICER",
-    name: "Priya Sharma",
-    title: "Sub-Registrar (DSR)",
-    department: "Registration & Stamps",
-    icon: "📝",
-    jurisdiction: "Madhubani Registration District",
-    description: "Review registered sale deeds, verify bank mortgage charges, and issue non-encumbrance certificates.",
-    landingUrl: "/officer"
-  },
-  {
-    role: "PLANNING_OFFICER",
-    name: "Anand Verma",
-    title: "Town Planning Officer",
-    department: "Urban Planning & Development",
-    icon: "📐",
-    jurisdiction: "Madhubani Planning Area 2035",
-    description: "Enforce Master Plan 2035 zoning, check Floor Area Ratio (FAR), and evaluate environmental buffer compliance.",
-    landingUrl: "/officer"
-  },
-  {
-    role: "MUNICIPALITY_OFFICER",
-    name: "Sunita Rao",
-    title: "Executive Officer (Nagar Panchayat)",
-    department: "Municipal Administration",
-    icon: "🏛️",
-    jurisdiction: "Basopatti Nagar Panchayat",
-    description: "Sanction residential/commercial building permits and review property tax assessments & arrears.",
-    landingUrl: "/officer"
-  },
-  {
-    role: "ADMIN",
-    name: "System Administrator",
-    title: "State Nodal Officer / Admin",
-    department: "Digital Land Governance Mission",
-    icon: "⚙️",
-    jurisdiction: "Pan-India Interoperability Hub",
-    description: "Configure State Adapters, monitor AI geospatial change detection, and audit system-wide data quality scores.",
-    landingUrl: "/admin/intelligence"
-  }
-];
+import { useAuth, DEMO_PERSONAS, UserPersona } from "@/lib/security/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState(DEMO_ROLES[1]);
+  const { currentUser, loginAs } = useAuth();
+  const [selectedPersona, setSelectedPersona] = useState<UserPersona>(currentUser);
   const [loggingIn, setLoggingIn] = useState(false);
+  const [authFeedback, setAuthFeedback] = useState<string | null>(null);
 
-  const handleLogin = (account: typeof DEMO_ROLES[0]) => {
-    setSelectedRole(account);
+  const handleLogin = (persona: UserPersona) => {
+    setSelectedPersona(persona);
     setLoggingIn(true);
+    setAuthFeedback(`Authenticating ${persona.name} (${persona.role})...`);
 
-    // Save to localStorage / cookie for demo sessions
-    localStorage.setItem("landstack_user", JSON.stringify(account));
-    document.cookie = `landstack_role=${account.role}; path=/; max-age=86400`;
+    // Authenticate via central Auth Context
+    loginAs(persona.id);
 
     setTimeout(() => {
-      router.push(account.landingUrl);
-    }, 600);
+      setAuthFeedback(`Access Granted: ${persona.title} [${persona.jurisdiction}]`);
+      setTimeout(() => {
+        router.push(persona.landingUrl);
+      }, 400);
+    }, 500);
   };
 
   return (
-    <div className="app-content animate-in" style={{ maxWidth: 1100, margin: "0 auto", padding: "var(--space-2xl) var(--space-lg)" }}>
+    <div className="app-content animate-in" style={{ maxWidth: 1180, margin: "0 auto", padding: "var(--space-2xl) var(--space-lg)" }}>
+      {/* Header Banner */}
       <div style={{ textAlign: "center", marginBottom: "var(--space-2xl)" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--brand-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--brand-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, boxShadow: "0 4px 16px rgba(59, 130, 246, 0.4)" }}>
             🏛️
           </div>
-          <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em" }}>LANDSTACK</span>
-          <span className="badge badge-info" style={{ fontSize: 11 }}>RBAC v2.0</span>
+          <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.03em" }}>LANDSTACK</span>
+          <span className="badge badge-info" style={{ fontSize: 11, fontWeight: 700 }}>RBAC & ABAC Engine</span>
         </div>
-        <h1 className="page-title" style={{ fontSize: 32 }}>Select Demo Persona / Role</h1>
-        <p className="page-subtitle" style={{ maxWidth: 640, margin: "8px auto 0" }}>
-          Experience LandStack's role-based access control (RBAC). Each persona unlocks specialized land governance workflows, GIS tools, and decision-support engines.
+        <h1 className="page-title" style={{ fontSize: 32 }}>Select Role / Persona</h1>
+        <p className="page-subtitle" style={{ maxWidth: 680, margin: "8px auto 0", fontSize: 14, lineHeight: 1.6 }}>
+          Experience LandStack's role-based access control. Switch between Citizen, Revenue Officer, Sub-Registrar, Town Planner, Tax Officer, State Admin, and C&AG Auditor.
         </p>
+
+        {/* Current Active User Status Bar */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 18,
+            padding: "8px 20px",
+            background: "rgba(15, 23, 42, 0.8)",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            borderRadius: 30,
+            fontSize: 13,
+            color: "#e2e8f0",
+          }}
+        >
+          <span>Currently Active:</span>
+          <strong style={{ color: "#38bdf8", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{currentUser.icon}</span> {currentUser.name} ({currentUser.title})
+          </strong>
+          <span style={{ fontSize: 11, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
+            {currentUser.role}
+          </span>
+        </div>
+
+        {authFeedback && (
+          <div
+            style={{
+              marginTop: 12,
+              color: "#34d399",
+              fontSize: 13,
+              fontWeight: 600,
+              animation: "fadeIn 0.2s ease",
+            }}
+          >
+            ✓ {authFeedback}
+          </div>
+        )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-lg)" }}>
-        {DEMO_ROLES.map((account) => {
-          const isSelected = selectedRole.role === account.role;
+      {/* Personas Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "var(--space-lg)" }}>
+        {DEMO_PERSONAS.map((account) => {
+          const isCurrentActive = currentUser.id === account.id || currentUser.role === account.role;
+          const isSelected = selectedPersona.id === account.id;
+
           return (
             <div
-              key={account.role}
+              key={account.id}
               className="card"
               style={{
                 cursor: "pointer",
-                border: isSelected ? "2px solid var(--brand-primary)" : "1px solid var(--border-color)",
-                background: isSelected ? "var(--brand-gradient-subtle)" : "var(--bg-secondary)",
+                border: isCurrentActive
+                  ? "2px solid #38bdf8"
+                  : isSelected
+                  ? "2px solid var(--brand-primary)"
+                  : "1px solid var(--border-color)",
+                background: isCurrentActive
+                  ? "rgba(56, 189, 248, 0.06)"
+                  : isSelected
+                  ? "var(--brand-gradient-subtle)"
+                  : "var(--bg-secondary)",
                 transition: "all 0.2s ease",
-                transform: isSelected ? "translateY(-3px)" : "none",
+                transform: isCurrentActive || isSelected ? "translateY(-3px)" : "none",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between"
+                justifyContent: "space-between",
+                position: "relative",
+                overflow: "hidden",
               }}
               onClick={() => handleLogin(account)}
             >
+              {/* Active Badge indicator */}
+              {isCurrentActive && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "#0284c7",
+                    color: "#ffffff",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: "3px 8px",
+                    borderRadius: 6,
+                    letterSpacing: 0.5,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  ACTIVE
+                </div>
+              )}
+
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ fontSize: 32, width: 50, height: 50, borderRadius: 12, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ fontSize: 32, width: 52, height: 52, borderRadius: 14, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
                     {account.icon}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>{account.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-accent)" }}>{account.title}</div>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)" }}>{account.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-accent)", fontWeight: 600 }}>{account.title}</div>
                   </div>
                 </div>
 
@@ -140,13 +156,28 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <button
-                className="btn btn-primary"
-                style={{ width: "100%", justifyContent: "center" }}
-                disabled={loggingIn}
-              >
-                {loggingIn && isSelected ? "Logging in..." : `Sign in as ${account.title.split(" ")[0]}`} →
-              </button>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+                  <span>Default Landing: <strong style={{ color: "#e2e8f0" }}>{account.landingUrl.split("?")[0]}</strong></span>
+                  <span style={{ fontFamily: "monospace" }}>{account.role}</span>
+                </div>
+
+                <button
+                  className={`btn ${isCurrentActive ? "btn-outline" : "btn-primary"}`}
+                  style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
+                  disabled={loggingIn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLogin(account);
+                  }}
+                >
+                  {loggingIn && isSelected
+                    ? "Switching Persona..."
+                    : isCurrentActive
+                    ? `Continue as ${account.name.split(" ")[0]} →`
+                    : `Sign in as ${account.title.split(" ")[0]} →`}
+                </button>
+              </div>
             </div>
           );
         })}
