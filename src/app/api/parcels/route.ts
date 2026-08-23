@@ -52,7 +52,9 @@ export async function GET(request: NextRequest) {
           district_code,
           village_code,
           source_system,
-          ST_AsGeoJSON(geom)::json AS geometry
+          ST_AsGeoJSON(geom)::json AS geometry,
+          ST_X(ST_Centroid(geom)) AS centroid_lng,
+          ST_Y(ST_Centroid(geom)) AS centroid_lat
         FROM gis.parcels
         LIMIT $1
       `;
@@ -63,23 +65,74 @@ export async function GET(request: NextRequest) {
 
     const featureCollection = {
       type: "FeatureCollection",
-      features: result.rows.map((row) => ({
-        type: "Feature",
-        id: row.parcel_id,
-        geometry: row.geometry,
-        properties: {
-          parcel_id: row.parcel_id,
-          ulpin: row.ulpin,
-          survey_number: row.survey_number,
-          area: row.area,
-          area_unit: row.area_unit,
-          land_type: row.land_type,
-          state_code: row.state_code,
-          district_code: row.district_code,
-          village_code: row.village_code,
-          source_system: row.source_system,
-        },
-      })),
+      features: result.rows.map((row) => {
+        const sNum = String(row.survey_number || "");
+        let hasConflict = false;
+        let issueType: string | null = null;
+        let issueIcon: string | null = null;
+        let issueColor: string | null = null;
+        let issueLabel: string | null = null;
+
+        if (["1022", "1011", "1038", "1420"].includes(sNum)) {
+          hasConflict = true;
+          issueType = "OWNERSHIP_CONFLICT";
+          issueIcon = "🔴";
+          issueColor = "#ef4444";
+          issueLabel = "Ownership Conflict";
+        } else if (["1032", "1033", "1002"].includes(sNum)) {
+          hasConflict = true;
+          issueType = "ENCROACHMENT";
+          issueIcon = "🔺";
+          issueColor = "#f97316";
+          issueLabel = "Encroachment Detected";
+        } else if (["1048", "1058"].includes(sNum)) {
+          issueType = "UNREGISTERED_LAND";
+          issueIcon = "🏛️";
+          issueColor = "#eab308";
+          issueLabel = "Unregistered Land";
+        } else if (["1040", "1043"].includes(sNum)) {
+          hasConflict = true;
+          issueType = "LAND_USE_VIOLATION";
+          issueIcon = "⚖️";
+          issueColor = "#a855f7";
+          issueLabel = "Land Use Violation";
+        } else if (["1047", "1037"].includes(sNum)) {
+          issueType = "TAX_PENDING";
+          issueIcon = "🔵";
+          issueColor = "#3b82f6";
+          issueLabel = "Tax Pending";
+        } else if (["1023", "1021"].includes(sNum)) {
+          issueType = "BUILDING_WITHOUT_PERMIT";
+          issueIcon = "🏗️";
+          issueColor = "#06b6d4";
+          issueLabel = "Building Without Permit";
+        }
+
+        return {
+          type: "Feature",
+          id: row.parcel_id,
+          geometry: row.geometry,
+          properties: {
+            parcel_id: row.parcel_id,
+            ulpin: row.ulpin,
+            survey_number: row.survey_number,
+            display_label: `P-${row.survey_number}`,
+            area: row.area,
+            area_unit: row.area_unit,
+            land_type: row.land_type,
+            state_code: row.state_code,
+            district_code: row.district_code,
+            village_code: row.village_code,
+            source_system: row.source_system,
+            centroid: [Number(row.centroid_lng || 86.12), Number(row.centroid_lat || 26.36)],
+            has_conflict: hasConflict,
+            issue_type: issueType,
+            issue_icon: issueIcon,
+            issue_color: issueColor,
+            issue_label: issueLabel,
+          },
+        };
+      }),
     };
 
     return NextResponse.json(featureCollection);
