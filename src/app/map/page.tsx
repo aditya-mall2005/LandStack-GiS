@@ -757,25 +757,6 @@ function MapContent() {
               ))}
             </div>
 
-            {/* Issues / Alerts Legend */}
-            <div style={{ padding: "10px 14px" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>ISSUES / ALERTS</div>
-              {[
-                { icon: "🔴", label: "Ownership Conflict" },
-                { icon: "🔺", label: "Encroachment" },
-                { icon: "🏛️", label: "Unregistered Land" },
-                { icon: "💰", label: "Tax Pending" },
-                { icon: "🏗️", label: "Building Without Permit" },
-                { icon: "⚖️", label: "Land Use Violation" },
-                { icon: "⚠️", label: "Dispute Exists" },
-              ].map((item) => (
-                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "#334155" }}>
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
             {/* Bottom Collapse */}
             <div style={{ marginTop: "auto", padding: "10px 14px", borderTop: "1px solid #e2e8f0", fontSize: 11, color: "#64748b", display: "flex", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setShowLayers(false)}>
               <span>Legend</span>
