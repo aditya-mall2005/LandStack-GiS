@@ -3,46 +3,14 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthProvider, useAuth } from "@/lib/security/auth-context";
+import { getFilteredNavSections } from "@/lib/security/route-guard";
+import { RouteGuard } from "@/components/RouteGuard";
 import "./globals.css";
-
-const NAV_SECTIONS = [
-  {
-    label: "Main",
-    items: [
-      { href: "/", icon: "🏠", label: "Dashboard" },
-      { href: "/map", icon: "🗺️", label: "GIS Map" },
-      { href: "/search", icon: "🔍", label: "Search Land" },
-    ],
-  },
-  {
-    label: "Citizen Services",
-    items: [
-      { href: "/services", icon: "📋", label: "Services" },
-      { href: "/applications", icon: "📄", label: "My Applications", badge: "2" },
-    ],
-  },
-  {
-    label: "Department Governance",
-    items: [
-      { href: "/officer", icon: "👨‍💼", label: "Officer Portal" },
-      { href: "/officer/conflicts", icon: "⚠️", label: "Data Conflicts", badge: "3" },
-    ],
-  },
-  {
-    label: "Intelligence & Standards",
-    items: [
-      { href: "/admin/intelligence", icon: "🧠", label: "AI & Satellite AI" },
-      { href: "/admin/adapters", icon: "🔌", label: "State Adapters" },
-      { href: "/admin/security", icon: "🛡️", label: "Security & Audit" },
-      { href: "/admin", icon: "⚙️", label: "Admin Overview" },
-      { href: "/admin/import", icon: "📥", label: "Data Import" },
-    ],
-  },
-];
 
 function Sidebar() {
   const pathname = usePathname();
   const { currentUser, getInitials } = useAuth();
+  const navSections = getFilteredNavSections(currentUser.role);
 
   return (
     <aside className="app-sidebar">
@@ -53,7 +21,7 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV_SECTIONS.map((section) => (
+        {navSections.map((section) => (
           <div key={section.label} className="sidebar-section">
             <div className="sidebar-section-label">{section.label}</div>
             {section.items.map((item) => (
@@ -122,7 +90,9 @@ export default function RootLayout({
         <AuthProvider>
           <div className="app-shell">
             <Sidebar />
-            <main className="app-main">{children}</main>
+            <main className="app-main">
+              <RouteGuard>{children}</RouteGuard>
+            </main>
           </div>
         </AuthProvider>
       </body>
