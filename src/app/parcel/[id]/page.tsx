@@ -4,20 +4,54 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import apiClient from "@/lib/api-client";
-import * as Lucide from "lucide-react";
+import {
+  PieChart,
+  User,
+  FileText,
+  FileSignature,
+  Lock,
+  Hammer,
+  Trees,
+  Wallet,
+  AlertTriangle,
+  GitMerge,
+  Landmark,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  Map,
+  ShieldCheck,
+  UserX,
+  Building2,
+  Compass,
+  ReceiptText,
+  Check,
+  CircleDot,
+  Star,
+  Loader2,
+  Ruler,
+  Layers,
+  Database,
+  Bell,
+  ArrowLeft,
+  ExternalLink,
+  Shield,
+  Clock,
+  Sparkles,
+} from "lucide-react";
 
 const TABS = [
-  { id: "overview", label: "Overview", icon: <Lucide.PieChart size={14} /> },
-  { id: "ownership", label: "Ownership", icon: <Lucide.User size={14} /> },
-  { id: "ror", label: "RoR", icon: <Lucide.FileText size={14} /> },
-  { id: "registration", label: "Registration", icon: <Lucide.FileSignature size={14} /> },
-  { id: "encumbrance", label: "Encumbrance", icon: <Lucide.Lock size={14} /> },
-  { id: "building", label: "Building", icon: <Lucide.Hammer size={14} /> },
-  { id: "landuse", label: "Land Use", icon: <Lucide.Trees size={14} /> },
-  { id: "tax", label: "Tax", icon: <Lucide.Wallet size={14} /> },
-  { id: "restrictions", label: "Restrictions", icon: <Lucide.AlertTriangle size={14} /> },
-  { id: "conflicts", label: "Conflicts", icon: <Lucide.GitMerge size={14} /> },
-  { id: "provenance", label: "Provenance", icon: <Lucide.Landmark size={14} /> },
+  { id: "overview", label: "Overview", icon: <PieChart size={14} /> },
+  { id: "ownership", label: "Ownership", icon: <User size={14} /> },
+  { id: "ror", label: "RoR", icon: <FileText size={14} /> },
+  { id: "registration", label: "Registration", icon: <FileSignature size={14} /> },
+  { id: "encumbrance", label: "Encumbrance", icon: <Lock size={14} /> },
+  { id: "building", label: "Building", icon: <Hammer size={14} /> },
+  { id: "landuse", label: "Land Use", icon: <Trees size={14} /> },
+  { id: "tax", label: "Tax", icon: <Wallet size={14} /> },
+  { id: "restrictions", label: "Restrictions", icon: <AlertTriangle size={14} /> },
+  { id: "conflicts", label: "Conflicts", icon: <GitMerge size={14} /> },
+  { id: "provenance", label: "Provenance", icon: <Landmark size={14} /> },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -66,10 +100,13 @@ export default function ParcelPage() {
 
   if (loading) {
     return (
-      <div className="app-content" style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-        <div style={{ textAlign: "center" }}>
-          <div className="animate-pulse" style={{ color: "var(--brand-primary)" }}><Lucide.Map size={48} /></div>
-          <p style={{ color: "var(--text-secondary)", marginTop: "var(--space-md)" }}>Loading Land 360° data...</p>
+      <div className="app-content" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "70vh" }}>
+        <div style={{ textAlign: "center", background: "var(--bg-card)", padding: "36px 48px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-default)", boxShadow: "var(--shadow-md)" }}>
+          <div style={{ display: "inline-flex", padding: 16, borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", marginBottom: 16 }}>
+            <Loader2 className="animate-spin" size={36} color="var(--brand-primary)" />
+          </div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>Loading Land 360° Profile</h3>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Aggregating 9 cadastral & governance public data layers...</p>
         </div>
       </div>
     );
@@ -78,11 +115,20 @@ export default function ParcelPage() {
   if (!data || data.error) {
     return (
       <div className="app-content">
-        <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-          <div style={{ color: "var(--status-error)" }}><Lucide.XCircle size={48} /></div>
-          <h3 style={{ marginTop: "var(--space-md)" }}>Parcel Not Found</h3>
-          <p style={{ color: "var(--text-secondary)" }}>{data?.error || "The requested parcel could not be found."}</p>
-          <Link href="/search" className="btn btn-primary" style={{ marginTop: "var(--space-md)" }}>Search Again</Link>
+        <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)", maxWidth: 500, margin: "40px auto" }}>
+          <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "rgba(239, 68, 68, 0.1)", marginBottom: 16 }}>
+            <XCircle size={40} color="var(--status-error)" />
+          </div>
+          <h3 style={{ marginTop: 4, fontWeight: 700 }}>Parcel Not Found</h3>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 8 }}>{data?.error || "The requested parcel record could not be found."}</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 20 }}>
+            <Link href="/search" className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <ArrowLeft size={14} /> Search Again
+            </Link>
+            <Link href="/map" className="btn btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Map size={14} /> Open GIS Map
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -99,8 +145,8 @@ export default function ParcelPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: 4, flexWrap: "wrap" }}>
             <h1 className="page-title">Land 360°</h1>
-            <span className="badge" style={{ background: STATUS_COLORS[rules?.status] + "22", color: STATUS_COLORS[rules?.status], fontSize: 12, padding: "3px 10px" }}>
-              {rules?.status || "UNKNOWN"}
+            <span className="badge" style={{ background: STATUS_COLORS[rules?.status] + "22", color: STATUS_COLORS[rules?.status], fontSize: 12, padding: "3px 10px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Shield size={12} /> {rules?.status || "UNKNOWN"}
             </span>
           </div>
           <p className="page-subtitle" style={{ wordBreak: "break-word" }}>
@@ -110,20 +156,28 @@ export default function ParcelPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
-          <Link href={`/map?parcel=${p.parcel_id}`} className="btn btn-secondary"><Lucide.Map size={14} /> View on Map</Link>
-          <Link href={`/services/ownership-verification?parcel=${p.parcel_id}`} className="btn btn-primary"><Lucide.CheckCircle2 size={14} /> Verify Ownership</Link>
+          <Link href={`/map?parcel=${p.parcel_id}`} className="btn btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Map size={14} /> View on Map
+          </Link>
+          <Link href={`/services/ownership-verification?parcel=${p.parcel_id}`} className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CheckCircle2 size={14} /> Verify Ownership
+          </Link>
         </div>
       </div>
 
       {/* Top Summary Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: "var(--space-lg)" }}>
         <div className="stat-card">
-          <div className="stat-label">Area</div>
+          <div className="stat-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Ruler size={13} style={{ color: "var(--brand-primary)" }} /> Area
+          </div>
           <div className="stat-value" style={{ fontSize: 18 }}>{Number(p.area).toLocaleString()}</div>
           <div className="stat-label">{p.area_unit || "sqm"}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Land Type</div>
+          <div className="stat-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Layers size={13} style={{ color: "var(--brand-primary)" }} /> Land Type
+          </div>
           <div style={{ marginTop: 4 }}>
             <span className="badge-land" style={{ background: LAND_TYPE_COLORS[p.land_type] || "#607D8B", fontSize: 12, padding: "3px 10px" }}>
               {p.land_type}
@@ -131,19 +185,25 @@ export default function ParcelPage() {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Compliance Score</div>
+          <div className="stat-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <ShieldCheck size={13} style={{ color: "var(--brand-primary)" }} /> Compliance Score
+          </div>
           <div className="stat-value" style={{ fontSize: 18, color: STATUS_COLORS[rules?.status] }}>{rules?.compliance_score || 0}%</div>
           <div className="progress-bar" style={{ marginTop: 6 }}>
             <div className="progress-fill" style={{ width: `${rules?.compliance_score || 0}%`, background: rules?.compliance_score >= 80 ? "var(--status-success)" : rules?.compliance_score >= 50 ? "var(--status-warning)" : "var(--status-error)" }} />
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Data Layers</div>
+          <div className="stat-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Database size={13} style={{ color: "var(--brand-primary)" }} /> Data Layers
+          </div>
           <div className="stat-value" style={{ fontSize: 18 }}>{quality?.layers_available?.length || 0}</div>
           <div className="stat-label">of 9 connected</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Alerts</div>
+          <div className="stat-label" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Bell size={13} style={{ color: rules?.alerts?.length > 0 ? "var(--status-warning)" : "var(--status-success)" }} /> Alerts
+          </div>
           <div className="stat-value" style={{ fontSize: 18, color: rules?.alerts?.length > 0 ? "var(--status-warning)" : "var(--status-success)" }}>
             {rules?.alerts?.length || 0}
           </div>
@@ -155,8 +215,9 @@ export default function ParcelPage() {
       {rules?.alerts?.length > 0 && (
         <div style={{ display: "grid", gap: "var(--space-sm)", marginBottom: "var(--space-lg)" }}>
           {rules.alerts.map((a: any, i: number) => (
-            <div key={i} className={`alert alert-${a.severity === "CRITICAL" ? "error" : "warning"}`}>
-              {a.severity === "CRITICAL" ? <Lucide.AlertCircle size={14} color="var(--status-error)" /> : <Lucide.AlertTriangle size={14} color="var(--status-warning)" />} <strong>[{a.code}]</strong> {a.message}
+            <div key={i} className={`alert alert-${a.severity === "CRITICAL" ? "error" : "warning"}`} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {a.severity === "CRITICAL" ? <AlertCircle size={15} color="var(--status-error)" style={{ flexShrink: 0 }} /> : <AlertTriangle size={15} color="var(--status-warning)" style={{ flexShrink: 0 }} />}
+              <div><strong>[{a.code}]</strong> {a.message}</div>
             </div>
           ))}
         </div>
@@ -169,7 +230,7 @@ export default function ParcelPage() {
             key={tab.id}
             className={`tab ${activeTab === tab.id ? "active" : ""}`}
             onClick={() => setActiveTab(tab.id)}
-            style={{ flexShrink: 0 }}
+            style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             {tab.icon} {tab.label}
           </button>
@@ -182,7 +243,9 @@ export default function ParcelPage() {
         {activeTab === "overview" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-md)" }}>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Parcel Details</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <PieChart size={16} color="var(--brand-primary)" /> Parcel Details
+              </h3>
               {[
                 ["Parcel ID", p.parcel_id?.substring(0, 8) + "..."],
                 ["ULPIN", p.ulpin],
@@ -200,7 +263,9 @@ export default function ParcelPage() {
               ))}
             </div>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Data Quality</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Database size={16} color="var(--brand-primary)" /> Data Quality
+              </h3>
               {[
                 ["RoR Record", quality?.has_ror],
                 ["Ownership", quality?.has_ownership],
@@ -212,17 +277,29 @@ export default function ParcelPage() {
               ].map(([label, hasData]) => (
                 <div key={label as string} className="field-row">
                   <span className="field-label">{label as string}</span>
-                  <span className={`badge ${hasData ? "badge-success" : "badge-neutral"}`}>
-                    {hasData ? "✓ Connected" : "○ Not linked"}
+                  <span className={`badge ${hasData ? "badge-success" : "badge-neutral"}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {hasData ? (
+                      <>
+                        <Check size={11} strokeWidth={2.5} /> Connected
+                      </>
+                    ) : (
+                      <>
+                        <CircleDot size={11} /> Not linked
+                      </>
+                    )}
                   </span>
                 </div>
               ))}
               {p.identifiers?.length > 0 && (
                 <>
-                  <h4 className="section-title" style={{ marginTop: "var(--space-md)" }}>Identifiers</h4>
+                  <h4 className="section-title" style={{ marginTop: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Layers size={14} /> Identifiers
+                  </h4>
                   {p.identifiers.map((id: any, i: number) => (
                     <div key={i} className="field-row">
-                      <span className="field-label">{id.identifier_type} {id.is_primary ? "★" : ""}</span>
+                      <span className="field-label" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {id.identifier_type} {id.is_primary && <Star size={11} fill="var(--brand-primary)" color="var(--brand-primary)" />}
+                      </span>
                       <span className="field-value" style={{ fontFamily: "monospace" }}>{id.identifier_value}</span>
                     </div>
                   ))}
@@ -241,7 +318,9 @@ export default function ParcelPage() {
                   <div key={i} className="card">
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{o.name}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                          <User size={16} color="var(--brand-primary)" /> {o.name}
+                        </div>
                         <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>Father/Husband: {o.father_husband || "—"}</div>
                       </div>
                       <span className="badge badge-info">{o.owner_type || o.ownership_type}</span>
@@ -256,8 +335,10 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>👤</div>
-                <p style={{ color: "var(--text-secondary)" }}>No ownership records linked to this parcel</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "var(--bg-app)", marginBottom: 12 }}>
+                  <UserX size={36} strokeWidth={1.5} style={{ color: "var(--text-tertiary)" }} />
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontWeight: 500 }}>No ownership records linked to this parcel</p>
               </div>
             )}
           </div>
@@ -268,7 +349,9 @@ export default function ParcelPage() {
           <div className="card">
             {data.ror ? (
               <>
-                <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Record of Rights</h3>
+                <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <FileText size={16} color="var(--brand-primary)" /> Record of Rights (Khatiyan)
+                </h3>
                 {[
                   ["Khata Number", data.ror.khata_number],
                   ["Khesra Number", data.ror.khesra_number],
@@ -291,8 +374,10 @@ export default function ParcelPage() {
               </>
             ) : (
               <div style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>📜</div>
-                <p style={{ color: "var(--text-secondary)" }}>No RoR records linked</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "var(--bg-app)", marginBottom: 12 }}>
+                  <FileText size={36} strokeWidth={1.5} style={{ color: "var(--text-tertiary)" }} />
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontWeight: 500 }}>No RoR records linked</p>
               </div>
             )}
           </div>
@@ -332,8 +417,10 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>📝</div>
-                <p style={{ color: "var(--text-secondary)" }}>No registration records found</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "var(--bg-app)", marginBottom: 12 }}>
+                  <FileSignature size={36} strokeWidth={1.5} style={{ color: "var(--text-tertiary)" }} />
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontWeight: 500 }}>No registration records found</p>
               </div>
             )}
           </div>
@@ -347,7 +434,9 @@ export default function ParcelPage() {
                 {data.encumbrances.map((e: any, i: number) => (
                   <div key={i} className="card" style={{ borderLeft: `3px solid ${e.status === "Active" ? "var(--status-error)" : "var(--status-success)"}` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-md)" }}>
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>{e.encumbrance_type}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Lock size={15} color={e.status === "Active" ? "var(--status-error)" : "var(--status-success)"} /> {e.encumbrance_type}
+                      </span>
                       <span className={`badge ${e.status === "Active" ? "badge-error" : "badge-success"}`}>{e.status}</span>
                     </div>
                     {[
@@ -369,8 +458,10 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>✅</div>
-                <p style={{ color: "var(--status-success)", fontWeight: 600 }}>No registered encumbrance found</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", marginBottom: 12 }}>
+                  <ShieldCheck size={36} strokeWidth={1.5} color="var(--status-success)" />
+                </div>
+                <p style={{ color: "var(--status-success)", fontWeight: 700, fontSize: 15 }}>No registered encumbrance found</p>
                 <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>Based on integrated records from Registration Department</p>
               </div>
             )}
@@ -385,7 +476,9 @@ export default function ParcelPage() {
                 {data.building_permissions.map((b: any, i: number) => (
                   <div key={i} className="card">
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "var(--space-md)" }}>
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>{b.building_type}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Building2 size={15} color="var(--brand-primary)" /> {b.building_type}
+                      </span>
                       <span className={`badge ${b.status === "Approved" ? "badge-success" : b.status === "Rejected" ? "badge-error" : "badge-warning"}`}>{b.status}</span>
                     </div>
                     {[
@@ -406,8 +499,10 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>🏗️</div>
-                <p style={{ color: "var(--text-secondary)" }}>No building permission records found</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "var(--bg-app)", marginBottom: 12 }}>
+                  <Building2 size={36} strokeWidth={1.5} style={{ color: "var(--text-tertiary)" }} />
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontWeight: 500 }}>No building permission records found</p>
               </div>
             )}
           </div>
@@ -415,9 +510,11 @@ export default function ParcelPage() {
 
         {/* ──── Land Use & Planning ──── */}
         {activeTab === "landuse" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-md)" }}>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>🌾 Land Use Zones</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trees size={16} color="var(--brand-primary)" /> Land Use Zones
+              </h3>
               {data.spatial?.land_use?.length > 0 ? (
                 data.spatial.land_use.map((lu: any, i: number) => (
                   <div key={i} className="field-row">
@@ -430,7 +527,9 @@ export default function ParcelPage() {
               )}
             </div>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>📐 Master Plan Zones</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Compass size={16} color="var(--brand-primary)" /> Master Plan Zones
+              </h3>
               {data.spatial?.master_plan?.length > 0 ? (
                 data.spatial.master_plan.map((mp: any, i: number) => (
                   <div key={i} style={{ marginBottom: "var(--space-sm)" }}>
@@ -474,7 +573,7 @@ export default function ParcelPage() {
                         <td style={{ fontWeight: 600 }}>{t.assessment_year}</td>
                         <td>₹{Number(t.tax_amount || 0).toLocaleString()}</td>
                         <td>₹{Number(t.paid_amount || 0).toLocaleString()}</td>
-                        <td style={{ color: Number(t.due_amount) > 0 ? "var(--status-error)" : "inherit" }}>₹{Number(t.due_amount || 0).toLocaleString()}</td>
+                        <td style={{ color: Number(t.due_amount) > 0 ? "var(--status-error)" : "inherit", fontWeight: Number(t.due_amount) > 0 ? 700 : 400 }}>₹{Number(t.due_amount || 0).toLocaleString()}</td>
                         <td>₹{Number(t.arrears || 0).toLocaleString()}</td>
                         <td><span className={`badge ${t.status === "Paid" ? "badge-success" : "badge-warning"}`}>{t.status}</span></td>
                       </tr>
@@ -484,8 +583,10 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>💰</div>
-                <p style={{ color: "var(--text-secondary)" }}>No property tax records found</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "var(--bg-app)", marginBottom: 12 }}>
+                  <ReceiptText size={36} strokeWidth={1.5} style={{ color: "var(--text-tertiary)" }} />
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontWeight: 500 }}>No property tax records found</p>
               </div>
             )}
           </div>
@@ -497,7 +598,8 @@ export default function ParcelPage() {
             {data.spatial?.restrictions?.length > 0 ? (
               <div style={{ display: "grid", gap: "var(--space-md)" }}>
                 {data.spatial.restrictions.map((r: any, i: number) => (
-                  <div key={i} className={`alert alert-${r.severity === "HIGH" || r.severity === "CRITICAL" ? "error" : "warning"}`}>
+                  <div key={i} className={`alert alert-${r.severity === "HIGH" || r.severity === "CRITICAL" ? "error" : "warning"}`} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <div style={{ fontWeight: 700, marginBottom: 4 }}>{r.restriction_name}</div>
                       <div style={{ fontSize: 12, opacity: 0.9 }}>Type: {r.restriction_type} • Severity: {r.severity}</div>
@@ -508,13 +610,18 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>✅</div>
-                <p style={{ color: "var(--status-success)", fontWeight: 600 }}>No restrictions detected</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", marginBottom: 12 }}>
+                  <ShieldCheck size={36} strokeWidth={1.5} color="var(--status-success)" />
+                </div>
+                <p style={{ color: "var(--status-success)", fontWeight: 700, fontSize: 15 }}>No restrictions detected</p>
+                <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>No buffer zones, flood risks, or master plan restrictions intersect this parcel.</p>
               </div>
             )}
             {data.disputes?.length > 0 && (
               <div style={{ marginTop: "var(--space-lg)" }}>
-                <h3 className="section-title">Active Disputes</h3>
+                <h3 className="section-title" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <AlertCircle size={16} color="var(--status-warning)" /> Active Legal Disputes
+                </h3>
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Case No.</th><th>Type</th><th>Court</th><th>Status</th><th>Stay Order</th><th>Filing Date</th></tr></thead>
@@ -525,7 +632,15 @@ export default function ParcelPage() {
                           <td>{d.dispute_type}</td>
                           <td>{d.court}</td>
                           <td><span className="badge badge-warning">{d.status}</span></td>
-                          <td>{d.stay_order ? "⚠️ Yes" : "No"}</td>
+                          <td>
+                            {d.stay_order ? (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--status-error)", fontWeight: 600 }}>
+                                <AlertTriangle size={12} /> Yes
+                              </span>
+                            ) : (
+                              "No"
+                            )}
+                          </td>
                           <td>{d.filing_date || "—"}</td>
                         </tr>
                       ))}
@@ -544,9 +659,14 @@ export default function ParcelPage() {
               <div style={{ display: "grid", gap: "var(--space-md)" }}>
                 {data.conflicts.map((c: any, i: number) => (
                   <div key={i} className="card" style={{ borderLeft: `3px solid ${c.severity === "HIGH" ? "var(--status-error)" : "var(--status-warning)"}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "var(--space-sm)" }}>
-                      <span style={{ fontWeight: 700 }}>{c.conflict_type}</span>
-                      <span className={`badge ${c.resolved ? "badge-success" : "badge-error"}`}>{c.resolved ? "Resolved" : "Open"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "var(--space-sm)", alignItems: "center" }}>
+                      <span style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                        <GitMerge size={15} color="var(--brand-primary)" /> {c.conflict_type}
+                      </span>
+                      <span className={`badge ${c.resolved ? "badge-success" : "badge-error"}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {c.resolved ? <Check size={11} strokeWidth={2.5} /> : <AlertCircle size={11} />}
+                        {c.resolved ? "Resolved" : "Open"}
+                      </span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)" }}>
                       <div className="card" style={{ padding: "var(--space-sm)", background: "var(--bg-elevated)" }}>
@@ -563,9 +683,11 @@ export default function ParcelPage() {
               </div>
             ) : (
               <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-                <div style={{ fontSize: 32 }}>✅</div>
-                <p style={{ color: "var(--status-success)", fontWeight: 600 }}>No data conflicts detected</p>
-                <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>All department records are consistent for this parcel</p>
+                <div style={{ display: "inline-flex", padding: 14, borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", marginBottom: 12 }}>
+                  <CheckCircle2 size={36} strokeWidth={1.5} color="var(--status-success)" />
+                </div>
+                <p style={{ color: "var(--status-success)", fontWeight: 700, fontSize: 15 }}>No data conflicts detected</p>
+                <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>All department records are consistent for this parcel</p>
               </div>
             )}
           </div>
@@ -573,9 +695,11 @@ export default function ParcelPage() {
 
         {/* ──── Provenance ──── */}
         {activeTab === "provenance" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-md)" }}>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Data Source</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Database size={16} color="var(--brand-primary)" /> Data Source & Audit Trail
+              </h3>
               {[
                 ["Source System", data.provenance?.source],
                 ["Data Type", data.provenance?.type],
@@ -585,15 +709,18 @@ export default function ParcelPage() {
                   <span className="field-value">{v || "—"}</span>
                 </div>
               ))}
-              <div className="alert alert-info" style={{ marginTop: "var(--space-md)" }}>
-                {data.provenance?.disclaimer}
+              <div className="alert alert-info" style={{ marginTop: "var(--space-md)", display: "flex", alignItems: "center", gap: 8 }}>
+                <Sparkles size={16} color="var(--status-info)" style={{ flexShrink: 0 }} />
+                <span>{data.provenance?.disclaimer}</span>
               </div>
             </div>
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Integration Matches</h3>
+              <h3 className="card-title" style={{ marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: 6 }}>
+                <GitMerge size={16} color="var(--brand-primary)" /> Integration Matches
+              </h3>
               {data.integration?.matches?.length > 0 ? (
                 data.integration.matches.map((m: any, i: number) => (
-                  <div key={i}>
+                  <div key={i} style={{ marginBottom: 12 }}>
                     {[
                       ["Source", m.source_system],
                       ["Match Method", m.match_method],
