@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import * as Lucide from "lucide-react";
@@ -112,7 +112,7 @@ function SearchContent() {
 
         {/* Role-Based Data Projection Indicator */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-card)", border: "1px solid var(--border-color)", padding: "6px 14px", borderRadius: "var(--radius-md)" }}>
-          <span style={{ display: "flex", alignItems: "center" }}>{(() => { const Icon = getLucideIcon(currentUser.icon); return <Icon size={16} />; })()}</span>
+          <span style={{ display: "flex", alignItems: "center" }}>{React.createElement(getLucideIcon(currentUser.icon), { size: 16 })}</span>
           <div style={{ textAlign: "left" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#f8fafc" }}>
               {isOfficer ? "In-Jurisdiction Officer View" : "Public Citizen View"}

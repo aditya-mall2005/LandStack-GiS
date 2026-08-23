@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, DEMO_PERSONAS, UserPersona, getLucideIcon } from "@/lib/security/auth-context";
 import * as Lucide from "lucide-react";
@@ -39,12 +39,10 @@ export default function LoginPage() {
           <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.03em" }}>LANDSTACK</span>
           <span className="badge badge-info" style={{ fontSize: 11, fontWeight: 700 }}>RBAC & ABAC Engine</span>
         </div>
-        <h1 className="page-title" style={{ fontSize: 32 }}>Select Role / Persona</h1>
-        <p className="page-subtitle" style={{ maxWidth: 680, margin: "8px auto 0", fontSize: 14, lineHeight: 1.6 }}>
-          Experience LandStack&apos;s role-based access control. Switch between Citizen, Revenue Officer, Sub-Registrar, Town Planner, Tax Officer, State Admin, and C&AG Auditor.
+        <p style={{ color: "var(--text-accent)", fontSize: 14, maxWidth: 640, margin: "0 auto", lineHeight: 1.6 }}>
+          Role-Based Access Control (RBAC) & Attribute-Based Access Control (ABAC) simulation for Departmental Officers & Public Citizens.
         </p>
 
-        {/* Current Active User Status Bar */}
         <div
           style={{
             display: "inline-flex",
@@ -61,7 +59,7 @@ export default function LoginPage() {
         >
           <span>Currently Active:</span>
           <strong style={{ color: "#38bdf8", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>{(() => { const Icon = getLucideIcon(currentUser.icon); return <Icon size={14} />; })()}</span> {currentUser.name} ({currentUser.title})
+            <span>{React.createElement(getLucideIcon(currentUser.icon), { size: 14 })}</span> {currentUser.name} ({currentUser.title})
           </strong>
           <span style={{ fontSize: 11, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
             {currentUser.role}

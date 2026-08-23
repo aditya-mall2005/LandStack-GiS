@@ -10,6 +10,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const bbox = searchParams.get("bbox");
@@ -63,23 +66,23 @@ export async function GET(request: NextRequest) {
       ) pt ON pt.parcel_id = p.parcel_id
     `;
 
-    if (bbox) {
-      const [minLng, minLat, maxLng, maxLat] = bbox.split(",").map(Number);
-      sql = `
-        ${baseSelect}
-        WHERE p.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
-        ORDER BY p.survey_number ASC
-        LIMIT $5
-      `;
-      params = [minLng, minLat, maxLng, maxLat, limit];
-    } else {
-      sql = `
-        ${baseSelect}
-        ORDER BY p.survey_number ASC
-        LIMIT $1
-      `;
-      params = [limit];
-    }
+      if (bbox) {
+        const [minLng, minLat, maxLng, maxLat] = bbox.split(",").map(Number);
+        sql = `
+          ${baseSelect}
+          WHERE p.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
+          ORDER BY CAST(p.survey_number AS INT) ASC
+          LIMIT $5
+        `;
+        params = [minLng, minLat, maxLng, maxLat, limit];
+      } else {
+        sql = `
+          ${baseSelect}
+          ORDER BY CAST(p.survey_number AS INT) ASC
+          LIMIT $1
+        `;
+        params = [limit];
+      }
 
     const result = await query(sql, params);
 
@@ -144,7 +147,13 @@ export async function GET(request: NextRequest) {
       }),
     };
 
-    return NextResponse.json(featureCollection);
+    return NextResponse.json(featureCollection, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[API /parcels] Error:", msg);

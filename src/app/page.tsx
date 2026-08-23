@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
@@ -107,7 +107,7 @@ export default function Dashboard() {
               boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
             }}
           >
-            {(() => { const Icon = getPersonaIcon(currentUser.icon); return <Icon size={28} color="#ffffff" />; })()}
+            {React.createElement(getPersonaIcon(currentUser.icon), { size: 28, color: "#ffffff" })}
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

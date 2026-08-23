@@ -76,12 +76,11 @@ function Sidebar() {
 
 function AppShellWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMapPage = pathname === "/map";
   const isLoginPage = pathname === "/login";
 
-  if (isMapPage || isLoginPage) {
+  if (isLoginPage) {
     return (
-      <main style={{ width: "100vw", height: "100vh", overflow: isMapPage ? "hidden" : "auto", background: isMapPage ? "#0B0F19" : "var(--bg-app)" }}>
+      <main style={{ width: "100vw", height: "100vh", overflow: "auto", background: "var(--bg-app)" }}>
         <RouteGuard>{children}</RouteGuard>
       </main>
     );
