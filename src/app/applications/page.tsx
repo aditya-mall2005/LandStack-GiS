@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/security/auth-context";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -36,6 +37,7 @@ function getSteps(currentStatus: string) {
 }
 
 export default function ApplicationsPage() {
+  const { currentUser } = useAuth();
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -44,7 +46,14 @@ export default function ApplicationsPage() {
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/v1/applications");
+      const url = currentUser.role !== "CITIZEN" && currentUser.role !== "ADMIN" && currentUser.role !== "AUDITOR"
+        ? (currentUser.role === "REGISTRATION_OFFICER" ? "/api/v1/applications?department=Registration"
+          : currentUser.role === "PLANNING_OFFICER" ? "/api/v1/applications?department=Planning"
+          : currentUser.role === "TAX_OFFICER" ? "/api/v1/applications?department=Municipality"
+          : "/api/v1/applications?department=Revenue")
+        : "/api/v1/applications";
+
+      const res = await fetch(url);
       const data = await res.json();
       if (data.applications?.length > 0) {
         setApplications(data.applications);
@@ -55,7 +64,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   const fetchDetail = useCallback(async (appNo: string) => {
     try {
@@ -84,10 +93,25 @@ export default function ApplicationsPage() {
     <div className="app-content animate-in">
       <div className="page-header">
         <div>
-          <h1 className="page-title">My Applications</h1>
-          <p className="page-subtitle">Track your service requests and applications</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span style={{ fontSize: 24 }}>{currentUser.role === "CITIZEN" ? "📋" : "👨‍💼"}</span>
+            <h1 className="page-title">
+              {currentUser.role === "CITIZEN" ? "My Applications & Status" : `${currentUser.department} Applications Tracking`}
+            </h1>
+          </div>
+          <p className="page-subtitle">
+            {currentUser.role === "CITIZEN"
+              ? `Track your land mutation, NOC, and RoR verification requests (${currentUser.name})`
+              : `Departmental case queue for ${currentUser.title} (${currentUser.jurisdiction})`}
+          </p>
         </div>
-        <Link href="/services" className="btn btn-primary">+ New Application</Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {currentUser.role === "CITIZEN" ? (
+            <Link href="/services" className="btn btn-primary">+ New Application</Link>
+          ) : (
+            <Link href="/officer" className="btn btn-primary">Open Officer Desk →</Link>
+          )}
+        </div>
       </div>
 
       {loading ? (
