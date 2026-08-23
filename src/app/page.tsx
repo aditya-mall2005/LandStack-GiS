@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
+import * as Lucide from "lucide-react";
+
+const getPersonaIcon = (iconName: string) => {
+  switch (iconName) {
+    case "User": return Lucide.User;
+    case "Briefcase": return Lucide.Briefcase;
+    case "FileSignature": return Lucide.FileSignature;
+    case "Ruler": return Lucide.Ruler;
+    case "Landmark": return Lucide.Landmark;
+    case "Shield": return Lucide.Shield;
+    default: return Lucide.User;
+  }
+};
 
 interface StatsData {
   overview: {
@@ -72,12 +85,12 @@ export default function Dashboard() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          background: "linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95))",
-          border: "1px solid var(--border-color)",
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border-default)",
           borderRadius: "var(--radius-lg)",
           padding: "var(--space-lg) var(--space-xl)",
           marginBottom: "var(--space-lg)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+          boxShadow: "var(--shadow-sm)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -94,11 +107,11 @@ export default function Dashboard() {
               boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
             }}
           >
-            {currentUser.icon}
+            {(() => { const Icon = getPersonaIcon(currentUser.icon); return <Icon size={28} color="#ffffff" />; })()}
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", margin: 0 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
                 Welcome, {currentUser.name}
               </h1>
               <span className="badge badge-info" style={{ fontSize: 11 }}>
@@ -112,20 +125,20 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/login" className="btn btn-outline" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-            <span>⇄</span> Switch Role
+          <Link href="/login" className="btn btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <Lucide.Repeat size={14} /> Switch Role
           </Link>
           {role === "CITIZEN" ? (
             <Link href="/services" className="btn btn-primary" style={{ fontSize: 12 }}>
-              + Apply Service
+              <Lucide.Plus size={14} /> Apply Service
             </Link>
           ) : role === "ADMIN" || role === "AUDITOR" ? (
             <Link href="/admin/security" className="btn btn-primary" style={{ fontSize: 12 }}>
-              🛡️ Security & Audit
+              <Lucide.Shield size={14} /> Security & Audit
             </Link>
           ) : (
             <Link href="/officer" className="btn btn-primary" style={{ fontSize: 12 }}>
-              👨‍💼 Officer Desk
+              <Lucide.Briefcase size={14} /> Officer Desk
             </Link>
           )}
         </div>
@@ -138,7 +151,7 @@ export default function Dashboard() {
           Search any parcel to view unified land records across departments — RoR Khatiyan, deeds, encumbrance, cadastral GIS & tax.
         </p>
         <form className="hero-search" onSubmit={handleSearch} style={{ maxWidth: 640 }}>
-          <span className="hero-search-icon">🔍</span>
+          <span className="hero-search-icon"><Lucide.Search size={18} /></span>
           <input
             className="input"
             placeholder="Search by ULPIN (e.g. IN-BR-10-00000001-62), Survey/Khesra No., or Raiyat Name..."
@@ -153,10 +166,10 @@ export default function Dashboard() {
       {role === "CITIZEN" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "📍", value: "3", label: "My Recorded Parcels", bg: "var(--status-info-bg)", desc: "Khesra #1420, #1894, #1648" },
-            { icon: "📐", value: "12.4 Ac", label: "Total Landholding", bg: "var(--status-success-bg)", desc: "Mauza Arghawa (33)" },
-            { icon: "📋", value: citizenApps.length || "2", label: "Active Applications", bg: "var(--status-warning-bg)", desc: "1 Approved, 1 In Review" },
-            { icon: "💰", value: "₹ 45.00", label: "Annual Lagan / Revenue", bg: "rgba(139,92,246,0.12)", desc: "Jamabandi #45 (Paid)" },
+            { icon: <Lucide.MapPin size={20} />, value: "3", label: "My Recorded Parcels", bg: "var(--status-info-bg)", desc: "Khesra #1420, #1894, #1648" },
+            { icon: <Lucide.Ruler size={20} />, value: "12.4 Ac", label: "Total Landholding", bg: "var(--status-success-bg)", desc: "Mauza Arghawa (33)" },
+            { icon: <Lucide.ClipboardList size={20} />, value: citizenApps.length || "2", label: "Active Applications", bg: "var(--status-warning-bg)", desc: "1 Approved, 1 In Review" },
+            { icon: <Lucide.Wallet size={20} />, value: "₹ 45.00", label: "Annual Lagan / Revenue", bg: "rgba(139,92,246,0.12)", desc: "Jamabandi #45 (Paid)" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -171,10 +184,10 @@ export default function Dashboard() {
       {role === "REVENUE_OFFICER" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "📍", value: stats?.overview.total_parcels || 300, label: "Jurisdiction Parcels", bg: "var(--status-info-bg)", desc: "Basopatti Circle" },
-            { icon: "📋", value: "4", label: "Pending Mutation Queue", bg: "var(--status-warning-bg)", desc: "SLA: 21 Days Target" },
-            { icon: "⚠️", value: "3", label: "Active Boundary Conflicts", bg: "var(--status-error-bg)", desc: "Overlaps on #1420, #1648, #1881" },
-            { icon: "📜", value: stats?.overview.total_ror_records || 300, label: "Jamabandi RoR Records", bg: "var(--status-success-bg)", desc: "Bihar Digital Khatiyan" },
+            { icon: <Lucide.MapPin size={20} />, value: stats?.overview.total_parcels || 300, label: "Jurisdiction Parcels", bg: "var(--status-info-bg)", desc: "Basopatti Circle" },
+            { icon: <Lucide.ClipboardList size={20} />, value: "4", label: "Pending Mutation Queue", bg: "var(--status-warning-bg)", desc: "SLA: 21 Days Target" },
+            { icon: <Lucide.AlertTriangle size={20} />, value: "3", label: "Active Boundary Conflicts", bg: "var(--status-error-bg)", desc: "Overlaps on #1420, #1648, #1881" },
+            { icon: <Lucide.FileText size={20} />, value: stats?.overview.total_ror_records || 300, label: "Jamabandi RoR Records", bg: "var(--status-success-bg)", desc: "Bihar Digital Khatiyan" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -189,10 +202,10 @@ export default function Dashboard() {
       {role === "REGISTRATION_OFFICER" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "📝", value: stats?.governance.registrations || 7, label: "Registered Deeds", bg: "var(--status-info-bg)", desc: "Madhubani District DSR" },
-            { icon: "🔒", value: stats?.governance.encumbrances || 3, label: "Encumbrance Requests", bg: "var(--status-warning-bg)", desc: "Bank & Citizen NOCs" },
-            { icon: "🏦", value: "2", label: "Active Bank Mortgages", bg: "rgba(139,92,246,0.12)", desc: "SBI & PNB Charges Registered" },
-            { icon: "💵", value: "₹ 4.85 L", label: "Stamp Duty Realized", bg: "var(--status-success-bg)", desc: "Current Fiscal Quarter" },
+            { icon: <Lucide.FileSignature size={20} />, value: stats?.governance.registrations || 7, label: "Registered Deeds", bg: "var(--status-info-bg)", desc: "Madhubani District DSR" },
+            { icon: <Lucide.Lock size={20} />, value: stats?.governance.encumbrances || 3, label: "Encumbrance Requests", bg: "var(--status-warning-bg)", desc: "Bank & Citizen NOCs" },
+            { icon: <Lucide.Building size={20} />, value: "2", label: "Active Bank Mortgages", bg: "rgba(139,92,246,0.12)", desc: "SBI & PNB Charges Registered" },
+            { icon: <Lucide.Banknote size={20} />, value: "₹ 4.85 L", label: "Stamp Duty Realized", bg: "var(--status-success-bg)", desc: "Current Fiscal Quarter" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -207,10 +220,10 @@ export default function Dashboard() {
       {role === "PLANNING_OFFICER" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "📐", value: stats?.spatial.master_plan_zones || 12, label: "Master Plan 2035 Zones", bg: "var(--status-info-bg)", desc: "Madhubani Planning Area" },
-            { icon: "🏗️", value: stats?.governance.building_permissions || 3, label: "Building Permissions", bg: "var(--status-warning-bg)", desc: "Residential & Commercial" },
-            { icon: "🌲", value: stats?.spatial.restriction_zones || 2, label: "Buffer Restriction Zones", bg: "rgba(236,72,153,0.12)", desc: "Kamla Nadi & Forest Setbacks" },
-            { icon: "✅", value: "100%", label: "FAR Compliance Rate", bg: "var(--status-success-bg)", desc: "Automated Geospatial Rules" },
+            { icon: <Lucide.Ruler size={20} />, value: stats?.spatial.master_plan_zones || 12, label: "Master Plan 2035 Zones", bg: "var(--status-info-bg)", desc: "Madhubani Planning Area" },
+            { icon: <Lucide.Building2 size={20} />, value: stats?.governance.building_permissions || 3, label: "Building Permissions", bg: "var(--status-warning-bg)", desc: "Residential & Commercial" },
+            { icon: <Lucide.Trees size={20} />, value: stats?.spatial.restriction_zones || 2, label: "Buffer Restriction Zones", bg: "rgba(236,72,153,0.12)", desc: "Kamla Nadi & Forest Setbacks" },
+            { icon: <Lucide.CheckCircle size={20} />, value: "100%", label: "FAR Compliance Rate", bg: "var(--status-success-bg)", desc: "Automated Geospatial Rules" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -225,10 +238,10 @@ export default function Dashboard() {
       {role === "TAX_OFFICER" && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "🏛️", value: stats?.governance.property_tax || 300, label: "Assessed Properties", bg: "var(--status-info-bg)", desc: "Nagar Panchayat Basopatti" },
-            { icon: "💰", value: "₹ 18.4 L", label: "Annual Tax Demand", bg: "var(--status-warning-bg)", desc: "GIS-Linked Assessment" },
-            { icon: "✅", value: "₹ 14.2 L", label: "Total Tax Collected", bg: "var(--status-success-bg)", desc: "77.2% Collection Efficiency" },
-            { icon: "⚠️", value: "12", label: "Defaulter Notices Pending", bg: "var(--status-error-bg)", desc: "Arrears > ₹10,000" },
+            { icon: <Lucide.Landmark size={20} />, value: stats?.governance.property_tax || 300, label: "Assessed Properties", bg: "var(--status-info-bg)", desc: "Nagar Panchayat Basopatti" },
+            { icon: <Lucide.Wallet size={20} />, value: "₹ 18.4 L", label: "Annual Tax Demand", bg: "var(--status-warning-bg)", desc: "GIS-Linked Assessment" },
+            { icon: <Lucide.CheckCircle size={20} />, value: "₹ 14.2 L", label: "Total Tax Collected", bg: "var(--status-success-bg)", desc: "77.2% Collection Efficiency" },
+            { icon: <Lucide.AlertCircle size={20} />, value: "12", label: "Defaulter Notices Pending", bg: "var(--status-error-bg)", desc: "Arrears > ₹10,000" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -243,10 +256,10 @@ export default function Dashboard() {
       {(role === "ADMIN" || role === "AUDITOR") && (
         <div className="stat-grid" style={{ marginBottom: "var(--space-lg)" }}>
           {[
-            { icon: "🛡️", value: "7", label: "SHA-256 Audit Logs", bg: "var(--status-info-bg)", desc: "Tamper-Evident Chain" },
-            { icon: "🚫", value: "2", label: "Unauthorized Denials", bg: "var(--status-error-bg)", desc: "Cross-State ABAC Blocks" },
-            { icon: "🤝", value: "3", label: "DPDPA 2023 Consents", bg: "var(--status-success-bg)", desc: "Active Purpose Registries" },
-            { icon: "🔌", value: "4", label: "State Adapters Live", bg: "rgba(139,92,246,0.12)", desc: "Bihar, UP, MH, KA" },
+            { icon: <Lucide.Shield size={20} />, value: "7", label: "SHA-256 Audit Logs", bg: "var(--status-info-bg)", desc: "Tamper-Evident Chain" },
+            { icon: <Lucide.Ban size={20} />, value: "2", label: "Unauthorized Denials", bg: "var(--status-error-bg)", desc: "Cross-State ABAC Blocks" },
+            { icon: <Lucide.Handshake size={20} />, value: "3", label: "DPDPA 2023 Consents", bg: "var(--status-success-bg)", desc: "Active Purpose Registries" },
+            { icon: <Lucide.Plug size={20} />, value: "4", label: "State Adapters Live", bg: "rgba(139,92,246,0.12)", desc: "Bihar, UP, MH, KA" },
           ].map((s) => (
             <div key={s.label} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>

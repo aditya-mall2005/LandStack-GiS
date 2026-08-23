@@ -113,3 +113,9 @@ gptchatdetail*
 .tempmediaStorage/
 .system_generated/
 scratch/
+
+DESIGN_SYSTEM.png
+CLAUDE.md
+AGENTS.md
+context.md
+ProblemStatement.md

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
 import { checkRouteAccess } from "@/lib/security/route-guard";
 import apiClient from "@/lib/api-client";
+import { ShieldAlert } from "lucide-react";
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,11 +41,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         <div
           className="card"
           style={{
-            background: "linear-gradient(135deg, rgba(30, 20, 25, 0.9), rgba(15, 23, 42, 0.98))",
+            background: "var(--bg-elevated)",
             border: "2px solid #ef4444",
             borderRadius: "var(--radius-lg)",
             padding: "36px 32px",
-            boxShadow: "0 8px 32px rgba(239, 68, 68, 0.2)",
+            boxShadow: "0 8px 32px rgba(239, 68, 68, 0.1)",
             textAlign: "center",
           }}
         >
@@ -53,17 +54,16 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
               width: 72,
               height: 72,
               borderRadius: "50%",
-              background: "rgba(239, 68, 68, 0.15)",
+              background: "rgba(239, 68, 68, 0.1)",
               border: "2px solid #ef4444",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 36,
               margin: "0 auto 20px",
-              boxShadow: "0 0 24px rgba(239, 68, 68, 0.35)",
+              boxShadow: "0 0 24px rgba(239, 68, 68, 0.2)",
             }}
           >
-            🛡️
+            <ShieldAlert size={36} color="#ef4444" />
           </div>
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
@@ -72,20 +72,20 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#f8fafc", margin: "12px 0 8px" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: "var(--text-primary)", margin: "12px 0 8px" }}>
             Restricted Statutory Route
           </h1>
 
           <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 580, margin: "0 auto 24px", lineHeight: 1.6 }}>
             You do not have the required authorization or jurisdictional clearance to access 
-            <strong style={{ color: "#f8fafc", fontFamily: "monospace", margin: "0 4px", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4 }}>{pathname}</strong>.
+            <strong style={{ color: "var(--text-primary)", fontFamily: "monospace", margin: "0 4px", background: "var(--bg-input)", padding: "2px 6px", borderRadius: 4 }}>{pathname}</strong>.
           </p>
 
           {/* Security Audit Details Box */}
           <div
             style={{
-              background: "rgba(15, 23, 42, 0.8)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "var(--bg-input)",
+              border: "1px solid var(--border-default)",
               borderRadius: "var(--radius-md)",
               padding: "16px 20px",
               maxWidth: 620,
@@ -95,8 +95,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
             }}
           >
             <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 8, marginBottom: 6 }}>
-              <span style={{ color: "#94a3b8" }}>Current Active Role:</span>
-              <strong style={{ color: "#38bdf8" }}>
+              <span style={{ color: "var(--text-tertiary)" }}>Current Active Role:</span>
+              <strong style={{ color: "var(--text-primary)" }}>
                 {currentUser.role} ({currentUser.name})
               </strong>
             </div>

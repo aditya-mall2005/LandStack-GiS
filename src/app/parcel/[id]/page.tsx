@@ -4,19 +4,20 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import apiClient from "@/lib/api-client";
+import * as Lucide from "lucide-react";
 
 const TABS = [
-  { id: "overview", label: "Overview", icon: "📊" },
-  { id: "ownership", label: "Ownership", icon: "👤" },
-  { id: "ror", label: "RoR", icon: "📜" },
-  { id: "registration", label: "Registration", icon: "📝" },
-  { id: "encumbrance", label: "Encumbrance", icon: "🔒" },
-  { id: "building", label: "Building", icon: "🏗️" },
-  { id: "landuse", label: "Land Use", icon: "🌾" },
-  { id: "tax", label: "Tax", icon: "💰" },
-  { id: "restrictions", label: "Restrictions", icon: "⚠️" },
-  { id: "conflicts", label: "Conflicts", icon: "🔀" },
-  { id: "provenance", label: "Provenance", icon: "🏛️" },
+  { id: "overview", label: "Overview", icon: <Lucide.PieChart size={14} /> },
+  { id: "ownership", label: "Ownership", icon: <Lucide.User size={14} /> },
+  { id: "ror", label: "RoR", icon: <Lucide.FileText size={14} /> },
+  { id: "registration", label: "Registration", icon: <Lucide.FileSignature size={14} /> },
+  { id: "encumbrance", label: "Encumbrance", icon: <Lucide.Lock size={14} /> },
+  { id: "building", label: "Building", icon: <Lucide.Hammer size={14} /> },
+  { id: "landuse", label: "Land Use", icon: <Lucide.Trees size={14} /> },
+  { id: "tax", label: "Tax", icon: <Lucide.Wallet size={14} /> },
+  { id: "restrictions", label: "Restrictions", icon: <Lucide.AlertTriangle size={14} /> },
+  { id: "conflicts", label: "Conflicts", icon: <Lucide.GitMerge size={14} /> },
+  { id: "provenance", label: "Provenance", icon: <Lucide.Landmark size={14} /> },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -67,7 +68,7 @@ export default function ParcelPage() {
     return (
       <div className="app-content" style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
         <div style={{ textAlign: "center" }}>
-          <div className="animate-pulse" style={{ fontSize: 40 }}>🗺️</div>
+          <div className="animate-pulse" style={{ color: "var(--brand-primary)" }}><Lucide.Map size={48} /></div>
           <p style={{ color: "var(--text-secondary)", marginTop: "var(--space-md)" }}>Loading Land 360° data...</p>
         </div>
       </div>
@@ -78,7 +79,7 @@ export default function ParcelPage() {
     return (
       <div className="app-content">
         <div className="card" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-          <div style={{ fontSize: 40 }}>❌</div>
+          <div style={{ color: "var(--status-error)" }}><Lucide.XCircle size={48} /></div>
           <h3 style={{ marginTop: "var(--space-md)" }}>Parcel Not Found</h3>
           <p style={{ color: "var(--text-secondary)" }}>{data?.error || "The requested parcel could not be found."}</p>
           <Link href="/search" className="btn btn-primary" style={{ marginTop: "var(--space-md)" }}>Search Again</Link>
@@ -109,8 +110,8 @@ export default function ParcelPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-sm)" }}>
-          <Link href={`/map?parcel=${p.parcel_id}`} className="btn btn-secondary">🗺️ View on Map</Link>
-          <Link href={`/services/ownership-verification?parcel=${p.parcel_id}`} className="btn btn-primary">✓ Verify Ownership</Link>
+          <Link href={`/map?parcel=${p.parcel_id}`} className="btn btn-secondary"><Lucide.Map size={14} /> View on Map</Link>
+          <Link href={`/services/ownership-verification?parcel=${p.parcel_id}`} className="btn btn-primary"><Lucide.CheckCircle2 size={14} /> Verify Ownership</Link>
         </div>
       </div>
 
@@ -155,7 +156,7 @@ export default function ParcelPage() {
         <div style={{ display: "grid", gap: "var(--space-sm)", marginBottom: "var(--space-lg)" }}>
           {rules.alerts.map((a: any, i: number) => (
             <div key={i} className={`alert alert-${a.severity === "CRITICAL" ? "error" : "warning"}`}>
-              {a.severity === "CRITICAL" ? "🚨" : "⚠️"} <strong>[{a.code}]</strong> {a.message}
+              {a.severity === "CRITICAL" ? <Lucide.AlertCircle size={14} color="var(--status-error)" /> : <Lucide.AlertTriangle size={14} color="var(--status-warning)" />} <strong>[{a.code}]</strong> {a.message}
             </div>
           ))}
         </div>

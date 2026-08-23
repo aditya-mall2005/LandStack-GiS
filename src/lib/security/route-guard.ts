@@ -41,33 +41,33 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
   {
     label: "Main",
     items: [
-      { href: "/", icon: "🏠", label: "Dashboard", allowedRoles: ALL_ROLES },
-      { href: "/map", icon: "🗺️", label: "GIS Map", allowedRoles: ALL_ROLES },
-      { href: "/search", icon: "🔍", label: "Search Land", allowedRoles: ALL_ROLES },
+      { href: "/", icon: "Home", label: "Dashboard", allowedRoles: ALL_ROLES },
+      { href: "/map", icon: "Map", label: "GIS Map", allowedRoles: ALL_ROLES },
+      { href: "/search", icon: "Search", label: "Search Land", allowedRoles: ALL_ROLES },
     ],
   },
   {
     label: "Citizen Services",
     items: [
-      { href: "/services", icon: "📋", label: "Services", allowedRoles: ["CITIZEN", "ADMIN"] },
-      { href: "/applications", icon: "📄", label: "My Applications", badge: "2", allowedRoles: ["CITIZEN", "ADMIN"] },
+      { href: "/services", icon: "ClipboardList", label: "Services", allowedRoles: ["CITIZEN", "ADMIN"] },
+      { href: "/applications", icon: "FileText", label: "My Applications", badge: "2", allowedRoles: ["CITIZEN", "ADMIN"] },
     ],
   },
   {
     label: "Department Governance",
     items: [
-      { href: "/officer", icon: "👨‍💼", label: "Officer Portal", allowedRoles: OFFICER_ROLES },
-      { href: "/officer/conflicts", icon: "⚠️", label: "Data Conflicts", badge: "3", allowedRoles: [...OFFICER_ROLES, "AUDITOR"] },
+      { href: "/officer", icon: "Briefcase", label: "Officer Portal", allowedRoles: OFFICER_ROLES },
+      { href: "/officer/conflicts", icon: "AlertTriangle", label: "Data Conflicts", badge: "3", allowedRoles: [...OFFICER_ROLES, "AUDITOR"] },
     ],
   },
   {
     label: "Intelligence & Standards",
     items: [
-      { href: "/admin/intelligence", icon: "🧠", label: "AI & Satellite AI", allowedRoles: ["ADMIN", "PLANNING_OFFICER", "REVENUE_OFFICER"] },
-      { href: "/admin/adapters", icon: "🔌", label: "State Adapters", allowedRoles: ["ADMIN"] },
-      { href: "/admin/security", icon: "🛡️", label: "Security & Audit", allowedRoles: ["ADMIN", "AUDITOR"] },
-      { href: "/admin", icon: "⚙️", label: "Admin Overview", allowedRoles: ["ADMIN"] },
-      { href: "/admin/import", icon: "📥", label: "Data Import", allowedRoles: ["ADMIN"] },
+      { href: "/admin/intelligence", icon: "Brain", label: "AI & Satellite AI", allowedRoles: ["ADMIN", "PLANNING_OFFICER", "REVENUE_OFFICER"] },
+      { href: "/admin/adapters", icon: "Plug", label: "State Adapters", allowedRoles: ["ADMIN"] },
+      { href: "/admin/security", icon: "Shield", label: "Security & Audit", allowedRoles: ["ADMIN", "AUDITOR"] },
+      { href: "/admin", icon: "Settings", label: "Admin Overview", allowedRoles: ["ADMIN"] },
+      { href: "/admin/import", icon: "Download", label: "Data Import", allowedRoles: ["ADMIN"] },
     ],
   },
 ];

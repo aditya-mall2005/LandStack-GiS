@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, DEMO_PERSONAS, UserPersona } from "@/lib/security/auth-context";
+import { useAuth, DEMO_PERSONAS, UserPersona, getLucideIcon } from "@/lib/security/auth-context";
+import * as Lucide from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,8 +33,8 @@ export default function LoginPage() {
       {/* Header Banner */}
       <div style={{ textAlign: "center", marginBottom: "var(--space-2xl)" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--brand-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, boxShadow: "0 4px 16px rgba(59, 130, 246, 0.4)" }}>
-            🏛️
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--brand-primary)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(59, 130, 246, 0.4)" }}>
+            <Lucide.Building2 size={24} color="#fff" />
           </div>
           <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.03em" }}>LANDSTACK</span>
           <span className="badge badge-info" style={{ fontSize: 11, fontWeight: 700 }}>RBAC & ABAC Engine</span>
@@ -60,7 +61,7 @@ export default function LoginPage() {
         >
           <span>Currently Active:</span>
           <strong style={{ color: "#38bdf8", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>{currentUser.icon}</span> {currentUser.name} ({currentUser.title})
+            <span>{(() => { const Icon = getLucideIcon(currentUser.icon); return <Icon size={14} />; })()}</span> {currentUser.name} ({currentUser.title})
           </strong>
           <span style={{ fontSize: 11, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
             {currentUser.role}
@@ -137,8 +138,8 @@ export default function LoginPage() {
 
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ fontSize: 32, width: 52, height: 52, borderRadius: 14, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    {account.icon}
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    {(() => { const Icon = getLucideIcon(account.icon); return <Icon size={24} color="var(--text-primary)" />; })()}
                   </div>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)" }}>{account.name}</div>
@@ -147,8 +148,8 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-                  <span className="badge badge-neutral" style={{ fontSize: 10 }}>🏢 {account.department}</span>
-                  <span className="badge badge-info" style={{ fontSize: 10 }}>📍 {account.jurisdiction.split(",")[0]}</span>
+                  <span className="badge badge-neutral" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 4 }}><Lucide.Building size={12} /> {account.department}</span>
+                  <span className="badge badge-info" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 4 }}><Lucide.MapPin size={12} /> {account.jurisdiction.split(",")[0]}</span>
                 </div>
 
                 <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>

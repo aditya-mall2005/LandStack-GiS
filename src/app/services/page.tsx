@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import * as Lucide from "lucide-react";
 
 const SERVICES = [
   {
     id: "ownership-verification",
-    icon: "✓",
+    icon: <Lucide.CheckCircle2 size={24} />,
     name: "Ownership Verification",
     desc: "Verify ownership records across Revenue and Registration departments",
     dept: "Revenue + Registration",
@@ -13,7 +14,7 @@ const SERVICES = [
   },
   {
     id: "ror-extract",
-    icon: "📜",
+    icon: <Lucide.FileText size={24} />,
     name: "RoR Extract",
     desc: "Request a certified copy of Record of Rights",
     dept: "Revenue Department",
@@ -21,7 +22,7 @@ const SERVICES = [
   },
   {
     id: "encumbrance-certificate",
-    icon: "🔒",
+    icon: <Lucide.Lock size={24} />,
     name: "Encumbrance Certificate",
     desc: "Check encumbrance status and get certificate",
     dept: "Registration Department",
@@ -29,7 +30,7 @@ const SERVICES = [
   },
   {
     id: "building-permission",
-    icon: "🏗️",
+    icon: <Lucide.Hammer size={24} />,
     name: "Building Permission",
     desc: "Apply for building permission or check existing status",
     dept: "Municipal Authority",
@@ -37,7 +38,7 @@ const SERVICES = [
   },
   {
     id: "land-use-certificate",
-    icon: "🌾",
+    icon: <Lucide.Trees size={24} />,
     name: "Land Use Certificate",
     desc: "Get certified land use and zoning information",
     dept: "Planning Department",
@@ -45,7 +46,7 @@ const SERVICES = [
   },
   {
     id: "property-tax",
-    icon: "💰",
+    icon: <Lucide.Wallet size={24} />,
     name: "Property Tax Query",
     desc: "View property tax assessment and payment history",
     dept: "Municipal Authority",
@@ -53,7 +54,7 @@ const SERVICES = [
   },
   {
     id: "mutation",
-    icon: "📋",
+    icon: <Lucide.FileSignature size={24} />,
     name: "Property Mutation",
     desc: "Apply for mutation / name transfer in revenue records",
     dept: "Revenue Department",
@@ -61,7 +62,7 @@ const SERVICES = [
   },
   {
     id: "restriction-check",
-    icon: "⚠️",
+    icon: <Lucide.AlertTriangle size={24} />,
     name: "Restriction Check",
     desc: "Check if parcel falls in restricted/protected zone",
     dept: "Environment + Planning",
@@ -90,7 +91,7 @@ export default function ServicesPage() {
                   <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: "var(--space-sm)" }}>{s.desc}</div>
                   <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
                     <span className="badge badge-info">{s.dept}</span>
-                    <span className="badge badge-neutral">⏱ {s.time}</span>
+                    <span className="badge badge-neutral" style={{ display: "flex", alignItems: "center", gap: 4 }}><Lucide.Clock size={10} /> {s.time}</span>
                   </div>
                 </div>
               </div>
