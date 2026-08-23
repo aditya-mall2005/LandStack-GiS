@@ -1,95 +1,72 @@
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Client } = require('pg');
 
 async function main() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+  let connStr = process.env.DATABASE_URL || "";
+  // If port 5432, try pooler port 6543
+  if (connStr.includes(":5432")) {
+    connStr = connStr.replace(":5432", ":6543");
+  }
+
+  const client = new Client({
+    connectionString: connStr,
     ssl: { rejectUnauthorized: false }
   });
 
-  const client = await pool.connect();
+  await client.connect();
   try {
-    console.log('=== GENERATING AUTHENTIC CADASTRAL PARCELS MATCHING REFERENCE UI ===');
+    console.log('=== GENERATING 180+ ORGANIC CADASTRAL PARCELS WITH NON-STRAIGHT EDGES & PATHWAY SPACES ===');
 
-    // Grid Settings (42 parcels, 6 rows x 7 cols)
-    const minLng = 86.1140;
-    const maxLng = 86.1265;
-    const minLat = 26.3530;
-    const maxLat = 26.3670;
+    const centerLng = 86.1195;
+    const centerLat = 26.3600;
+    const spanLng = 0.0190;
+    const spanLat = 0.0220;
 
-    const ROWS = 6;
-    const COLS = 7;
-    const totalPlots = ROWS * COLS; // 42
+    const ROWS = 13;
+    const COLS = 16;
 
-    const dLng = (maxLng - minLng) / COLS;
-    const dLat = (maxLat - minLat) / ROWS;
+    const minLng = centerLng - spanLng / 2;
+    const maxLng = centerLng + spanLng / 2;
+    const minLat = centerLat - spanLat / 2;
+    const maxLat = centerLat + spanLat / 2;
 
-    // Survey numbers corresponding to the reference image
-    const SURVEY_NUMBERS = [
-      // Row 0 (North)
-      "1021", "1017", "1033", "1048", "1047", "1048", "1003",
-      // Row 1
-      "1022", "1015", "1035", "1003", "1033", "1083", "1043",
-      // Row 2
-      "1048", "1023", "1040", "1002", "1032", "1033", "1037",
-      // Row 3
-      "1011", "1033", "1038", "1037", "1033", "1064", "1002",
-      // Row 4
-      "1083", "1032", "1038", "1038", "1043", "1063", "1051",
-      // Row 5 (South)
-      "1083", "1064", "1038", "1038", "1058", "1063", "1058"
-    ];
+    const dLng = spanLng / COLS;
+    const dLat = spanLat / ROWS;
 
-    // Land Types distribution
-    const LAND_TYPES = [
-      // Row 0
-      "Agricultural", "Agricultural", "Agricultural", "Residential", "Residential", "Agricultural", "Agricultural",
-      // Row 1
-      "Commercial", "Agricultural", "Agricultural", "Residential", "Residential", "Agricultural", "Government Land",
-      // Row 2
-      "Agricultural", "Agricultural", "Government Land", "Commercial", "Commercial", "Residential", "Residential",
-      // Row 3
-      "Commercial", "Agricultural", "Agricultural", "Agricultural", "Residential", "Government Land", "Residential",
-      // Row 4
-      "Agricultural", "Commercial", "Agricultural", "Agricultural", "Commercial", "Agricultural", "Residential",
-      // Row 5
-      "Agricultural", "Agricultural", "Agricultural", "Agricultural", "Residential", "Agricultural", "Residential"
-    ];
+    // Organic non-rectangular boundary envelope check (eliminates straight outer box)
+    function isInsideVillageBoundary(lng, lat) {
+      const nx = (lng - centerLng) / (spanLng * 0.47);
+      const ny = (lat - centerLat) / (spanLat * 0.47);
+      const angle = Math.atan2(ny, nx);
+      const dist = Math.sqrt(nx * nx + ny * ny);
 
-    // Conflict plots (with hatched red stripes)
-    const CONFLICT_SURVEYS = new Set(["1022", "1011", "1032", "1033", "1043", "1038"]);
+      const maxRadius = 1.0 + 
+        0.18 * Math.sin(angle * 3 + 1.2) + 
+        0.12 * Math.cos(angle * 5 - 0.7) +
+        0.07 * Math.sin(angle * 7 + 2.1);
 
-    // Generate vertices with natural agrarian field jitter
-    const cornerVertices = [];
-    function cornerJitter(r, c) {
-      if (r === 0 || r === ROWS || c === 0 || c === COLS) {
-        return { jx: 0, jy: 0 };
-      }
-      const val1 = Math.sin(r * 23.4 + c * 47.1) * 43758.5453;
-      const f1 = (val1 - Math.floor(val1)) - 0.5;
-      const val2 = Math.cos(r * 31.8 + c * 19.3) * 43758.5453;
-      const f2 = (val2 - Math.floor(val2)) - 0.5;
-
-      return {
-        jx: f1 * 0.42 * dLng,
-        jy: f2 * 0.42 * dLat
-      };
+      return dist <= maxRadius;
     }
 
+    // Generate organic vertices with Perlin-style jitter
+    const cornerVertices = [];
     for (let r = 0; r <= ROWS; r++) {
       cornerVertices[r] = [];
       for (let c = 0; c <= COLS; c++) {
-        const { jx, jy } = cornerJitter(r, c);
-        const lng = minLng + c * dLng + jx;
-        const lat = maxLat - r * dLat + jy;
+        const baseLng = minLng + c * dLng;
+        const baseLat = maxLat - r * dLat;
+
+        const jitterX = (Math.sin(r * 3.7 + c * 5.9) * 0.35 + Math.cos(r * 8.1 - c * 2.3) * 0.15) * dLng;
+        const jitterY = (Math.cos(r * 4.3 + c * 3.1) * 0.35 + Math.sin(r * 2.1 + c * 7.4) * 0.15) * dLat;
+
         cornerVertices[r][c] = [
-          parseFloat(lng.toFixed(7)),
-          parseFloat(lat.toFixed(7))
+          parseFloat((baseLng + jitterX).toFixed(7)),
+          parseFloat((baseLat + jitterY).toFixed(7))
         ];
       }
     }
 
-    // Horizontal mid points (shared)
+    // Mid-edge curve vertices (gives multi-sided organic field bunds)
     const horizontalMids = [];
     for (let r = 0; r <= ROWS; r++) {
       horizontalMids[r] = [];
@@ -98,19 +75,14 @@ async function main() {
         const vR = cornerVertices[r][c + 1];
         const midLng = (vL[0] + vR[0]) / 2;
         const midLat = (vL[1] + vR[1]) / 2;
-        if (r === 0 || r === ROWS) {
-          horizontalMids[r][c] = [midLng, midLat];
-        } else {
-          const bend = (Math.sin(r * 12.3 + c * 7.9) - 0.5) * 0.2 * dLat;
-          horizontalMids[r][c] = [
-            parseFloat(midLng.toFixed(7)),
-            parseFloat((midLat + bend).toFixed(7))
-          ];
-        }
+        const bend = (Math.sin(r * 5.2 + c * 9.1) * 0.16) * dLat;
+        horizontalMids[r][c] = [
+          parseFloat(midLng.toFixed(7)),
+          parseFloat((midLat + bend).toFixed(7))
+        ];
       }
     }
 
-    // Vertical mid points (shared)
     const verticalMids = [];
     for (let r = 0; r < ROWS; r++) {
       verticalMids[r] = [];
@@ -119,21 +91,34 @@ async function main() {
         const vB = cornerVertices[r + 1][c];
         const midLng = (vT[0] + vB[0]) / 2;
         const midLat = (vT[1] + vB[1]) / 2;
-        if (c === 0 || c === COLS) {
-          verticalMids[r][c] = [midLng, midLat];
-        } else {
-          const bend = (Math.cos(r * 8.4 + c * 15.2) - 0.5) * 0.2 * dLng;
-          verticalMids[r][c] = [
-            parseFloat((midLng + bend).toFixed(7)),
-            parseFloat(midLat.toFixed(7))
-          ];
-        }
+        const bend = (Math.cos(r * 7.3 + c * 4.6) * 0.16) * dLng;
+        verticalMids[r][c] = [
+          parseFloat((midLng + bend).toFixed(7)),
+          parseFloat(midLat.toFixed(7))
+        ];
       }
     }
 
-    // Rebuild database tables
-    await client.query('BEGIN');
+    // Selected conflict plot indices (8 target plots across village)
+    const conflictCells = new Set([
+      "3,5", "4,9", "6,4", "7,11", "8,6", "9,12", "5,7", "10,8"
+    ]);
 
+    function getLandType(r, c, isConflict) {
+      if (isConflict) return Math.random() > 0.5 ? "Commercial" : "Residential";
+      const nx = (c - COLS / 2) / COLS;
+      const ny = (r - ROWS / 2) / ROWS;
+      const dist = Math.sqrt(nx * nx + ny * ny);
+
+      if (dist < 0.22) return Math.random() > 0.4 ? "Residential" : "Commercial";
+      if (c <= 3 && r >= 4 && r <= 7) return "Government Land";
+      if (r === 0 || c === COLS - 1) return Math.random() > 0.6 ? "Forest" : "Agricultural";
+      if (c === 8 && r >= 3 && r <= 5) return "Residential";
+      if (r === 6 && c === 6) return "Water Body";
+      return Math.random() > 0.25 ? "Agricultural" : "Residential";
+    }
+
+    await client.query('BEGIN');
     await client.query('DELETE FROM land.data_conflicts');
     await client.query('DELETE FROM governance.disputes');
     await client.query('DELETE FROM governance.property_tax');
@@ -145,7 +130,7 @@ async function main() {
     await client.query('DELETE FROM gis.parcel_identifiers');
     await client.query('DELETE FROM gis.parcels');
 
-    // Create / fetch primary owners
+    // Create standard owners
     const ownerRes = await client.query(`
       INSERT INTO land.owners (name, owner_type, identifier_ref, father_husband)
       VALUES 
@@ -154,20 +139,29 @@ async function main() {
         ('Suresh Prasad', 'Individual', 'ABCPS9012F', 'Shri Gauri Shankar Prasad'),
         ('Birendra Kumar', 'Individual', 'ABCPB3456G', 'Shri Muneshwar Mahto'),
         ('Smt. Geeta Devi', 'Individual', 'ABCPG7890H', 'W/o Late Suresh Jha'),
+        ('Md. Aslam Ansari', 'Individual', 'ABCPA1122J', 'Shri Noor Ansari'),
+        ('Sunil Kumar Verma', 'Individual', 'ABCPV3344K', 'Shri Kedarnath Verma'),
         ('State of Bihar (Revenue Dept)', 'Government', 'GOVBR00001', 'Collectorate Madhubani')
       RETURNING owner_id, name
     `);
 
-    const ownerMap = {};
-    ownerRes.rows.forEach(o => { ownerMap[o.name] = o.owner_id; });
+    const ownerList = ownerRes.rows;
+    let surveyCounter = 1001;
+    let insertedCount = 0;
 
-    let idx = 0;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        const surveyNo = SURVEY_NUMBERS[idx] || (1000 + idx).toString();
-        const landType = LAND_TYPES[idx] || "Agricultural";
-        const isConflict = CONFLICT_SURVEYS.has(surveyNo);
+        const cellCenterLng = (cornerVertices[r][c][0] + cornerVertices[r + 1][c + 1][0]) / 2;
+        const cellCenterLat = (cornerVertices[r][c][1] + cornerVertices[r + 1][c + 1][1]) / 2;
+
+        if (!isInsideVillageBoundary(cellCenterLng, cellCenterLat)) {
+          continue;
+        }
+
+        const surveyNo = (surveyCounter++).toString();
         const ulpin = `IN-BR-PTN-000${surveyNo}`;
+        const isConflict = conflictCells.has(`${r},${c}`);
+        const landType = getLandType(r, c, isConflict);
 
         let vTL = [...cornerVertices[r][c]];
         let vTopMid = [...horizontalMids[r][c]];
@@ -178,8 +172,23 @@ async function main() {
         let vBL = [...cornerVertices[r + 1][c]];
         let vLeftMid = [...verticalMids[r][c]];
 
+        // Inset margin (creates realistic pathway / road spacing between plots!)
+        const gapRatio = 0.085;
+        const insetX = dLng * gapRatio;
+        const insetY = dLat * gapRatio;
+
+        vTL[0] += insetX; vTL[1] -= insetY;
+        vTopMid[1] -= insetY;
+        vTR[0] -= insetX; vTR[1] -= insetY;
+        vRightMid[0] -= insetX;
+        vBR[0] -= insetX; vBR[1] += insetY;
+        vBottomMid[1] += insetY;
+        vBL[0] += insetX; vBL[1] += insetY;
+        vLeftMid[0] += insetX;
+
+        // If conflict, extend boundary to overlap into adjacent plot
         if (isConflict) {
-          const overlap = dLng * 0.28;
+          const overlap = dLng * 0.22;
           vTR[0] += overlap;
           vRightMid[0] += overlap;
           vBR[0] += overlap;
@@ -189,17 +198,16 @@ async function main() {
           vTL, vTopMid, vTR, vRightMid, vBR, vBottomMid, vBL, vLeftMid, vTL
         ]];
 
-        const midLat = (vTL[1] + vBL[1]) / 2;
-        const widthM = (Math.abs(vTR[0] - vTL[0]) * 111320 * Math.cos(midLat * Math.PI / 180));
+        const widthM = (Math.abs(vTR[0] - vTL[0]) * 111320 * Math.cos(cellCenterLat * Math.PI / 180));
         const heightM = (Math.abs(vTL[1] - vBL[1]) * 111320);
-        const areaSqm = Math.max(1200, Math.round(widthM * heightM));
+        const areaSqm = Math.max(900, Math.round(widthM * heightM));
 
         const geomGeoJSON = JSON.stringify({
           type: 'Polygon',
           coordinates: polygonCoords
         });
 
-        // Insert parcel
+        // Insert parcel with PostGIS ST_Multi
         const parcelInsert = await client.query(`
           INSERT INTO gis.parcels (
             ulpin, survey_number, area, area_unit, land_type, 
@@ -215,15 +223,16 @@ async function main() {
         const parcelId = parcelInsert.rows[0].parcel_id;
 
         // Assign Owner
-        const ownerName = surveyNo === "1051" ? "Rahul Kumar Singh" :
-          (landType === "Government Land" ? "State of Bihar (Revenue Dept)" :
-          (idx % 3 === 0 ? "Ramesh Kumar" : idx % 3 === 1 ? "Birendra Kumar" : "Smt. Geeta Devi"));
-        const ownerId = ownerMap[ownerName] || ownerMap["Rahul Kumar Singh"];
+        const ownerObj = (surveyNo === "1051" || isConflict)
+          ? ownerList.find(o => o.name === 'Rahul Kumar Singh')
+          : (landType === 'Government Land'
+              ? ownerList.find(o => o.name.includes('State of Bihar'))
+              : ownerList[insertedCount % (ownerList.length - 1)]);
 
         await client.query(`
           INSERT INTO land.parcel_ownership (parcel_id, owner_id, ownership_type, ownership_share)
           VALUES ($1, $2, 'Raiyat', 1.0)
-        `, [parcelId, ownerId]);
+        `, [parcelId, ownerObj.owner_id]);
 
         // Insert RoR
         await client.query(`
@@ -233,7 +242,7 @@ async function main() {
           ) VALUES (
             $1, $2, $3, $4, $5, 'SQ_METERS', 24.50, 'ACTIVE', 'Jamabandi Panji-II'
           )
-        `, [parcelId, (100 + (idx % 15)).toString(), surveyNo, landType, areaSqm]);
+        `, [parcelId, (100 + (insertedCount % 35)).toString(), surveyNo, landType, areaSqm]);
 
         // Insert Parcel Identifier
         await client.query(`
@@ -243,7 +252,7 @@ async function main() {
             ($1, 'KHESRA', $3, 'Bihar Bhumi', false)
         `, [parcelId, ulpin, surveyNo]);
 
-        // Insert Conflict Record if applicable
+        // Insert specific conflict records on designated conflict plots
         if (isConflict) {
           await client.query(`
             INSERT INTO land.data_conflicts (
@@ -251,7 +260,7 @@ async function main() {
             ) VALUES (
               $1, 'BOUNDARY_OVERLAP', 'HIGH',
               'Cadastral DGPS Drone Survey', '${areaSqm} sq.m.',
-              'Jamabandi Panji-II Khatiyan', '${areaSqm - 250} sq.m.',
+              'Jamabandi Panji-II Khatiyan', '${areaSqm - 280} sq.m.',
               false
             )
           `, [parcelId]);
@@ -260,46 +269,47 @@ async function main() {
             INSERT INTO governance.disputes (
               parcel_id, dispute_type, case_number, court, petitioner, respondent, status, stay_order
             ) VALUES (
-              $1, 'TITLE_SUIT', 'TS/2024/${100 + idx}', 'Civil Court Madhubani',
-              'Suresh Prasad', 'Rahul Kumar Singh', 'ACTIVE', true
+              $1, 'TITLE_SUIT', 'TS/2024/${200 + insertedCount}', 'Civil Court Madhubani',
+              'Suresh Prasad', '${ownerObj.name}', 'ACTIVE', true
             )
           `, [parcelId]);
         }
 
         // Insert Property Tax
+        const hasTaxDue = insertedCount % 16 === 0;
         await client.query(`
           INSERT INTO governance.property_tax (
             parcel_id, assessment_year, owner_name, tax_amount, paid_amount, due_amount, arrears, status
           ) VALUES (
-            $1, '2024-2025', $2, 12450, ${isConflict ? 0 : 12450}, ${isConflict ? 12450 : 0}, 0,
-            ${isConflict ? "'UNPAID'" : "'PAID'"}
+            $1, '2024-2025', $2, 12450, ${hasTaxDue ? 0 : 12450}, ${hasTaxDue ? 12450 : 0}, 0,
+            ${hasTaxDue ? "'UNPAID'" : "'PAID'"}
           )
-        `, [parcelId, ownerName]);
+        `, [parcelId, ownerObj.name]);
 
         // Insert Building Permission
         if (landType === "Residential" || landType === "Commercial") {
+          const isPendingBP = insertedCount % 14 === 0;
           await client.query(`
             INSERT INTO governance.building_permissions (
               parcel_id, application_number, applicant, building_type, approved_area, floors, status
             ) VALUES (
-              $1, 'BP-2024-${100 + idx}', '${ownerName}', '${landType === "Commercial" ? "Commercial Complex" : "Residential G+2"}',
-              ${Math.round(areaSqm * 0.6)}, 3, ${isConflict ? "'PENDING'" : "'APPROVED'"}
+              $1, 'BP-2024-${200 + insertedCount}', '${ownerObj.name}', '${landType === "Commercial" ? "Commercial Complex" : "Residential G+2"}',
+              ${Math.round(areaSqm * 0.65)}, 3, ${isPendingBP ? "'PENDING'" : "'APPROVED'"}
             )
           `, [parcelId]);
         }
 
-        idx++;
+        insertedCount++;
       }
     }
 
     await client.query('COMMIT');
-    console.log(`✓ Successfully regenerated ${totalPlots} authentic cadastral parcels matching reference UI.`);
+    console.log(`✓ Successfully regenerated ${insertedCount} organic cadastral parcels with non-straight boundary edges and realistic pathway spacing.`);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error generating parcels:', err);
   } finally {
-    client.release();
-    await pool.end();
+    await client.end();
   }
 }
 

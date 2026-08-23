@@ -23,7 +23,7 @@ export async function GET(
               ST_X(ST_Centroid(geom)) AS centroid_lng,
               ST_Y(ST_Centroid(geom)) AS centroid_lat
        FROM gis.parcels 
-       WHERE parcel_id::text = $1 OR ulpin = $1
+       WHERE parcel_id::text = $1 OR ulpin = $1 OR survey_number = $1
        LIMIT 1`,
       [id]
     );
