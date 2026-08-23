@@ -1,106 +1,24 @@
 /**
  * LandStack — Pan-India Multi-Language Translation Dictionary
  * Supporting 11 Indian languages with regional land revenue terminology.
- */
-
-export interface LanguageMeta {
+ */export interface LanguageMeta {
   code: string;
   name: string;
   englishName: string;
-  region: string;
-  flag: string;
-  landTermsSummary: string;
 }
 
 export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
-  {
-    code: "en",
-    name: "English",
-    englishName: "English",
-    region: "Pan-India / Central",
-    flag: "🇮🇳",
-    landTermsSummary: "RoR, Cadastre, Mutation, Encumbrance, Tax",
-  },
-  {
-    code: "hi",
-    name: "हिन्दी",
-    englishName: "Hindi",
-    region: "North & Central (Bihar, UP, MP, RJ, HR, DL, UK)",
-    flag: "🌾",
-    landTermsSummary: "जमाबंदी, खतियान, खेसरा, दाखिल-खारिज, लगान",
-  },
-  {
-    code: "ta",
-    name: "தமிழ்",
-    englishName: "Tamil",
-    region: "South (Tamil Nadu, Puducherry)",
-    flag: "🏛️",
-    landTermsSummary: "பட்டா, சிட்டா, புல எண், பட்டா மாறுதல், வில்லங்கம்",
-  },
-  {
-    code: "te",
-    name: "తెలుగు",
-    englishName: "Telugu",
-    region: "South (Andhra Pradesh, Telangana)",
-    flag: "🌾",
-    landTermsSummary: "పహానీ, 1-B రికార్డు, ఖాతా, పట్టా బదిలీ, ఈసీ",
-  },
-  {
-    code: "bn",
-    name: "বাংলা",
-    englishName: "Bengali",
-    region: "East (West Bengal, Tripura, Assam)",
-    flag: "🌿",
-    landTermsSummary: "পরচা, খতিয়ান, দাগ নম্বর, নামপত্তন, খাজনা",
-  },
-  {
-    code: "mr",
-    name: "मराठी",
-    englishName: "Marathi",
-    region: "West (Maharashtra, Goa)",
-    flag: "🏰",
-    landTermsSummary: "७/१२ उतारा, ८-अ, गट नंबर, फेरफार, शेतसारा",
-  },
-  {
-    code: "gu",
-    name: "ગુજરાતી",
-    englishName: "Gujarati",
-    region: "West (Gujarat, Daman & Diu)",
-    flag: "🏢",
-    landTermsSummary: "૭/૧૨ નો ઉતારો, ૮-અ, સર્વે નંબર, હક્ક પત્રક, મહેસૂલ",
-  },
-  {
-    code: "kn",
-    name: "ಕನ್ನಡ",
-    englishName: "Kannada",
-    region: "South (Karnataka)",
-    flag: "🌲",
-    landTermsSummary: "ಪಹಣಿ, ಭೂಮಿ ಆರ್‌ಟಿಸಿ, ಸರ್ವೇ ನಂಬರ್, ಕಂದಾಯ, ಪೌತಿ",
-  },
-  {
-    code: "pa",
-    name: "ਪੰਜਾਬੀ",
-    englishName: "Punjabi",
-    region: "North (Punjab, Chandigarh)",
-    flag: "🌾",
-    landTermsSummary: "ਜਮ੍ਹਾਂਬੰਦੀ, ਫ਼ਰਦ, ਖਸਰਾ ਨੰਬਰ, ਇੰਤਕਾਲ, ਮਾਲੀਆ",
-  },
-  {
-    code: "ml",
-    name: "മലയാളം",
-    englishName: "Malayalam",
-    region: "South (Kerala, Lakshadweep)",
-    flag: "🌴",
-    landTermsSummary: "തണ്ടപ്പേര്, ബി.ടി.ആർ, സർവേ നമ്പർ, പോക്കുവരവ്, ഭൂനികുതി",
-  },
-  {
-    code: "or",
-    name: "ଓଡ଼ିଆ",
-    englishName: "Odia",
-    region: "East (Odisha)",
-    flag: "🛕",
-    landTermsSummary: "ଭୂଲେଖ ଖତିୟାନ, ପଟ୍ଟା, ପ୍ଲଟ୍ ନମ୍ବର, ଦାଖଲ ଖାରଜ, ଖଜଣା",
-  },
+  { code: "en", name: "English", englishName: "English" },
+  { code: "hi", name: "हिन्दी", englishName: "Hindi" },
+  { code: "ta", name: "தமிழ்", englishName: "Tamil" },
+  { code: "te", name: "తెలుగు", englishName: "Telugu" },
+  { code: "bn", name: "বাংলা", englishName: "Bengali" },
+  { code: "mr", name: "मराठी", englishName: "Marathi" },
+  { code: "gu", name: "ગુજરાતી", englishName: "Gujarati" },
+  { code: "kn", name: "ಕನ್ನಡ", englishName: "Kannada" },
+  { code: "pa", name: "ਪੰਜਾਬੀ", englishName: "Punjabi" },
+  { code: "ml", name: "മലയാളം", englishName: "Malayalam" },
+  { code: "or", name: "ଓଡ଼ିଆ", englishName: "Odia" },
 ];
 
 export type TranslationKey = string;
