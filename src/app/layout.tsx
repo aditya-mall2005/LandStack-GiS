@@ -77,18 +77,10 @@ function AppShellWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMapPage = pathname === "/map";
 
-  if (isMapPage) {
-    return (
-      <main style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#0B0F19" }}>
-        <RouteGuard>{children}</RouteGuard>
-      </main>
-    );
-  }
-
   return (
     <div className="app-shell">
       <Sidebar />
-      <main className="app-main">
+      <main className="app-main" style={isMapPage ? { padding: 0, height: "100vh", overflow: "hidden", maxWidth: "100%" } : undefined}>
         <RouteGuard>{children}</RouteGuard>
       </main>
     </div>

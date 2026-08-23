@@ -77,39 +77,14 @@ const BASEMAP_DEFINITIONS: Record<string, any> = {
         maxzoom: 20
       }
     ]
-  },
-  voyager: {
-    version: 8,
-    name: "Streets",
-    sources: {
-      "osm-base": {
-        type: "raster",
-        tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        ],
-        tileSize: 256,
-        attribution: "&copy; OpenStreetMap contributors"
-      }
-    },
-    layers: [
-      {
-        id: "base-tiles",
-        type: "raster",
-        source: "osm-base",
-        minzoom: 0,
-        maxzoom: 19
-      }
-    ]
   }
 };
 
 const BASE_LAYERS_CONFIG = [
   { id: "parcels", label: "Cadastral Parcels", defaultChecked: true },
-  { id: "roads", label: "Roads", defaultChecked: false },
+  { id: "roads", label: "Roads", defaultChecked: false, color: "#f8fafc" },
   { id: "satellite-layer", label: "Satellite Imagery", defaultChecked: true },
-  { id: "village-boundary", label: "Village Boundary", defaultChecked: false },
+  { id: "village-boundary", label: "Village Boundary", defaultChecked: false, color: "#facc15" },
 ];
 
 const GOVERNANCE_LAYERS_CONFIG = [
@@ -120,14 +95,6 @@ const GOVERNANCE_LAYERS_CONFIG = [
   { id: "disputes", label: "Disputes", defaultChecked: false, color: "#EF4444" },
   { id: "property-tax", label: "Property Tax", defaultChecked: false, color: "#10B981" },
   { id: "utilities", label: "Utilities", defaultChecked: false, color: "#6366F1" },
-];
-
-const ISSUE_STATS = [
-  { id: "OWNERSHIP_CONFLICT", label: "Ownership Conflict", count: 4, icon: "🔴", color: "#ef4444" },
-  { id: "ENCROACHMENT", label: "Encroachment", count: 3, icon: "🟠", color: "#f97316" },
-  { id: "UNREGISTERED_LAND", label: "Unregistered Land", count: 2, icon: "🟡", color: "#eab308" },
-  { id: "LAND_USE_VIOLATION", label: "Land Use Violation", count: 1, icon: "🟣", color: "#a855f7" },
-  { id: "TAX_PENDING", label: "Tax Pending", count: 1, icon: "🔵", color: "#3b82f6" },
 ];
 
 function createConflictStripeImage(): ImageData | null {
@@ -158,8 +125,10 @@ function MapContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const layerPopupRef = useRef<maplibregl.Popup | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const cachedGeoJson = useRef<any>(null);
+  const cachedSpatialLayers = useRef<Record<string, any>>({});
 
   // States
   const [selectedParcel, setSelectedParcel] = useState<any>(null);
@@ -169,7 +138,6 @@ function MapContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [selectedIssueFilter, setSelectedIssueFilter] = useState<string | null>(null);
   const [activeBaseLayers, setActiveBaseLayers] = useState<Record<string, boolean>>({
     parcels: true,
     roads: false,
@@ -191,6 +159,16 @@ function MapContent() {
     selectedParcelRef.current = selectedParcel;
   }, [selectedParcel]);
 
+  const activeGovLayersRef = useRef(activeGovLayers);
+  useEffect(() => {
+    activeGovLayersRef.current = activeGovLayers;
+  }, [activeGovLayers]);
+
+  const activeBaseLayersRef = useRef(activeBaseLayers);
+  useEffect(() => {
+    activeBaseLayersRef.current = activeBaseLayers;
+  }, [activeBaseLayers]);
+
   const inspectParcel = useCallback(async (parcelId: string) => {
     const map = mapRef.current;
     if (map && map.getLayer("parcels-highlight")) {
@@ -208,16 +186,14 @@ function MapContent() {
     }
   }, []);
 
-  // Add issue markers on map canvas
+  // Render issue markers
   const renderIssueMarkers = useCallback((map: maplibregl.Map, features: any[]) => {
-    // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     features.forEach((f) => {
       const p = f.properties;
       if (!p.issue_type) return;
-      if (selectedIssueFilter && p.issue_type !== selectedIssueFilter) return;
 
       const coords = p.centroid || f.geometry?.coordinates?.[0]?.[0];
       if (!coords || !Array.isArray(coords)) return;
@@ -255,7 +231,104 @@ function MapContent() {
 
       markersRef.current.push(marker);
     });
-  }, [selectedIssueFilter, inspectParcel]);
+  }, [inspectParcel]);
+
+  // Load a spatial base/governance layer onto the map
+  const loadSpatialLayer = useCallback(async (map: maplibregl.Map, layerId: string, color = "#FFA726") => {
+    if (!map) return;
+    const sourceId = `layer-${layerId}`;
+
+    try {
+      let geojson = cachedSpatialLayers.current[layerId];
+      if (!geojson) {
+        const res = await apiClient.get(`/api/v1/layers/${layerId}`);
+        geojson = res.data;
+        cachedSpatialLayers.current[layerId] = geojson;
+      }
+
+      if (!map.getSource(sourceId)) {
+        map.addSource(sourceId, { type: "geojson", data: geojson });
+      }
+
+      const beforeLayer = map.getLayer("parcels-fill") ? "parcels-fill" : undefined;
+
+      // Handle polygon fill
+      if (!map.getLayer(`${sourceId}-fill`)) {
+        map.addLayer({
+          id: `${sourceId}-fill`,
+          type: "fill",
+          source: sourceId,
+          paint: {
+            "fill-color": color,
+            "fill-opacity": layerId === "village-boundary" ? 0.08 : 0.38,
+          },
+        }, beforeLayer);
+      }
+
+      // Handle outline/lines
+      if (!map.getLayer(`${sourceId}-outline`)) {
+        map.addLayer({
+          id: `${sourceId}-outline`,
+          type: "line",
+          source: sourceId,
+          paint: {
+            "line-color": color,
+            "line-width": layerId === "village-boundary" ? 3 : 2,
+            "line-dasharray": layerId === "village-boundary" ? [4, 2] : [2, 1],
+            "line-opacity": 0.9,
+          },
+        });
+      }
+
+      // Interactive hover tooltip for governance layers
+      (map as any).off("mousemove", `${sourceId}-fill`);
+      (map as any).on("mousemove", `${sourceId}-fill`, (e: any) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const pr = f.properties || {};
+        if (layerPopupRef.current) layerPopupRef.current.remove();
+
+        let title = layerId.replace("-", " ").toUpperCase();
+        let subtitle = pr.zone_name || pr.village_name || pr.applicant || pr.institution || pr.court || pr.road_name || pr.utility_name || "Layer Area";
+
+        layerPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-family:Inter,sans-serif;font-size:11px;padding:4px 8px;background:#0B0F19;color:#f8fafc;border-radius:6px;border:1px solid ${color}">
+              <div style="font-weight:700;color:${color}">${title}</div>
+              <div style="color:#e2e8f0;font-size:10px;margin-top:2px">${subtitle}</div>
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      (map as any).off("mouseleave", `${sourceId}-fill`);
+      (map as any).on("mouseleave", `${sourceId}-fill`, () => {
+        if (layerPopupRef.current) {
+          layerPopupRef.current.remove();
+          layerPopupRef.current = null;
+        }
+      });
+    } catch (err) {
+      console.warn(`Layer ${layerId} notice:`, err);
+    }
+  }, []);
+
+  const removeSpatialLayer = useCallback((map: maplibregl.Map, layerId: string) => {
+    if (!map) return;
+    const sourceId = `layer-${layerId}`;
+    try {
+      if (layerPopupRef.current) {
+        layerPopupRef.current.remove();
+        layerPopupRef.current = null;
+      }
+      if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
+      if (map.getLayer(`${sourceId}-outline`)) map.removeLayer(`${sourceId}-outline`);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+    } catch (err) {
+      console.warn(`Error removing ${layerId}:`, err);
+    }
+  }, []);
 
   const setupParcelLayers = useCallback((map: maplibregl.Map, initialData?: any) => {
     if (!map) return;
@@ -275,7 +348,7 @@ function MapContent() {
       (map.getSource("parcels") as maplibregl.GeoJSONSource).setData(initialData);
     }
 
-    const parcelsVisible = activeBaseLayers.parcels ? "visible" : "none";
+    const parcelsVisible = activeBaseLayersRef.current.parcels ? "visible" : "none";
 
     // 1. Base Fill Layer
     if (!map.getLayer("parcels-fill")) {
@@ -373,7 +446,7 @@ function MapContent() {
       });
     }
 
-    // Interactive Hover Tooltip
+    // Hover Tooltip
     (map as any).off("mousemove", "parcels-fill");
     (map as any).on("mousemove", "parcels-fill", (e: any) => {
       map.getCanvas().style.cursor = "pointer";
@@ -411,7 +484,7 @@ function MapContent() {
       if (!f?.properties?.parcel_id) return;
       inspectParcel(f.properties.parcel_id);
     });
-  }, [activeBaseLayers.parcels, inspectParcel]);
+  }, [inspectParcel]);
 
   const loadParcels = useCallback(async (map: maplibregl.Map) => {
     try {
@@ -431,12 +504,28 @@ function MapContent() {
           inspectParcel(target.properties.parcel_id);
         }
       }
+
+      // Re-apply enabled governance and base layers
+      Object.entries(activeGovLayersRef.current).forEach(([layerId, enabled]) => {
+        if (enabled) {
+          const cfg = GOVERNANCE_LAYERS_CONFIG.find((l) => l.id === layerId);
+          loadSpatialLayer(map, layerId, cfg?.color);
+        }
+      });
+
+      if (activeBaseLayersRef.current["village-boundary"]) {
+        loadSpatialLayer(map, "village-boundary", "#facc15");
+      }
+      if (activeBaseLayersRef.current["roads"]) {
+        loadSpatialLayer(map, "roads", "#f8fafc");
+      }
+
       return geojson;
     } catch (err) {
       console.error("Failed to load parcels:", err);
       return null;
     }
-  }, [setupParcelLayers, renderIssueMarkers, inspectParcel]);
+  }, [setupParcelLayers, renderIssueMarkers, inspectParcel, loadSpatialLayer]);
 
   // Search handler
   const handleSearch = useCallback(async (q: string) => {
@@ -472,8 +561,6 @@ function MapContent() {
       style: BASEMAP_DEFINITIONS.satellite,
       center: [86.120, 26.360],
       zoom: 15.2,
-      pitch: 0,
-      bearing: 0,
     });
 
     map.on("load", async () => {
@@ -496,44 +583,61 @@ function MapContent() {
     };
   }, [loadParcels, searchParams, inspectParcel]);
 
-  // Update issue markers when filter changes
-  useEffect(() => {
+  // Toggle base layer
+  const toggleBaseLayer = (layerId: string, checked: boolean) => {
+    const updated = { ...activeBaseLayers, [layerId]: checked };
+    setActiveBaseLayers(updated);
     const map = mapRef.current;
-    if (map && cachedGeoJson.current) {
-      renderIssueMarkers(map, cachedGeoJson.current.features || []);
+    if (!map) return;
+
+    if (layerId === "parcels") {
+      const vis = checked ? "visible" : "none";
+      ["parcels-fill", "parcels-conflict-hatch", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
+        if (map.getLayer(lyr)) map.setLayoutProperty(lyr, "visibility", vis);
+      });
+    } else if (layerId === "satellite-layer") {
+      map.setStyle(checked ? BASEMAP_DEFINITIONS.satellite : BASEMAP_DEFINITIONS.dark);
+      map.once("styledata", () => {
+        loadParcels(map);
+      });
+    } else if (layerId === "roads") {
+      if (checked) loadSpatialLayer(map, "roads", "#f8fafc");
+      else removeSpatialLayer(map, "roads");
+    } else if (layerId === "village-boundary") {
+      if (checked) loadSpatialLayer(map, "village-boundary", "#facc15");
+      else removeSpatialLayer(map, "village-boundary");
     }
-  }, [selectedIssueFilter, renderIssueMarkers]);
+  };
+
+  // Toggle governance layer
+  const toggleGovernanceLayer = (layerId: string, checked: boolean) => {
+    const updated = { ...activeGovLayers, [layerId]: checked };
+    setActiveGovLayers(updated);
+    const map = mapRef.current;
+    if (!map) return;
+
+    const cfg = GOVERNANCE_LAYERS_CONFIG.find((l) => l.id === layerId);
+    if (checked) {
+      loadSpatialLayer(map, layerId, cfg?.color || "#FFA726");
+    } else {
+      removeSpatialLayer(map, layerId);
+    }
+  };
 
   // Selected Parcel fields
   const p = selectedParcel?.parcel;
   const ownership = selectedParcel?.ownership?.[0];
-  const conflicts = selectedParcel?.conflicts || [];
-  const disputes = selectedParcel?.disputes || [];
-  const tax = selectedParcel?.tax?.[0];
-  const buildingPerms = selectedParcel?.building_permissions?.[0];
-
   const areaAcres = p?.area ? (Number(p.area) / 4046.86).toFixed(2) : "0.48";
   const areaSqm = p?.area ? Number(p.area).toFixed(2) : "1941.00";
   const coordsText = p?.centroid_lat ? `${Number(p.centroid_lat).toFixed(4)}, ${Number(p.centroid_lng).toFixed(4)}` : "25.6245, 85.1378";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", background: "#0B0F19", color: "#F8FAFC", overflow: "hidden", fontFamily: "Inter, -apple-system, sans-serif" }}>
-      {/* 1. Top Bar Header */}
-      <header style={{ height: 60, background: "#0B0F19", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 30 }}>
-        {/* Left: Brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: "linear-gradient(135deg, #10b981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#fff", boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)" }}>
-            🏛
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", lineHeight: 1.1 }}>LandStack</div>
-            <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: "0.02em" }}>Integrated Land Governance</div>
-          </div>
-        </div>
-
-        {/* Center: Search Bar */}
-        <div style={{ flex: 1, maxWidth: 480, position: "relative", margin: "0 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", background: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: 8, padding: "7px 12px", gap: 8 }}>
+      {/* 1. Map Top Toolbar */}
+      <header style={{ height: 54, background: "#0B0F19", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 30 }}>
+        {/* Search Input */}
+        <div style={{ flex: 1, maxWidth: 500, position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: 8, padding: "6px 12px", gap: 8 }}>
             <span style={{ color: "#64748b", fontSize: 14 }}>🔍</span>
             <input
               type="text"
@@ -571,7 +675,7 @@ function MapContent() {
           )}
         </div>
 
-        {/* Right: Quick Action Controls & User */}
+        {/* Right: Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => setShowLayers(!showLayers)}
@@ -627,16 +731,7 @@ function MapContent() {
                   <input
                     type="checkbox"
                     checked={Boolean(activeBaseLayers[layer.id])}
-                    onChange={(e) => {
-                      const updated = { ...activeBaseLayers, [layer.id]: e.target.checked };
-                      setActiveBaseLayers(updated);
-                      if (layer.id === "parcels" && mapRef.current) {
-                        const vis = e.target.checked ? "visible" : "none";
-                        ["parcels-fill", "parcels-conflict-hatch", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
-                          if (mapRef.current?.getLayer(lyr)) mapRef.current.setLayoutProperty(lyr, "visibility", vis);
-                        });
-                      }
-                    }}
+                    onChange={(e) => toggleBaseLayer(layer.id, e.target.checked)}
                     style={{ accentColor: "#10b981", cursor: "pointer" }}
                   />
                   <span>{layer.label}</span>
@@ -652,8 +747,8 @@ function MapContent() {
                   <input
                     type="checkbox"
                     checked={Boolean(activeGovLayers[layer.id])}
-                    onChange={(e) => setActiveGovLayers({ ...activeGovLayers, [layer.id]: e.target.checked })}
-                    style={{ accentColor: "#10b981", cursor: "pointer" }}
+                    onChange={(e) => toggleGovernanceLayer(layer.id, e.target.checked)}
+                    style={{ accentColor: layer.color || "#10b981", cursor: "pointer" }}
                   />
                   <span>{layer.label}</span>
                 </label>
@@ -709,35 +804,6 @@ function MapContent() {
 
         {/* 3. Central Map Canvas with Floating Overlays */}
         <div style={{ flex: 1, position: "relative", height: "100%" }}>
-          {/* Top Floating Issues Filter Pill Bar */}
-          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 15, display: "flex", alignItems: "center", background: "rgba(11, 15, 25, 0.9)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: 30, padding: "4px 12px", gap: 8, backdropFilter: "blur(12px)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginRight: 4 }}>Show Issues</span>
-            {ISSUE_STATS.map((stat) => (
-              <button
-                key={stat.id}
-                onClick={() => setSelectedIssueFilter(selectedIssueFilter === stat.id ? null : stat.id)}
-                style={{
-                  background: selectedIssueFilter === stat.id ? "rgba(255, 255, 255, 0.18)" : "transparent",
-                  border: selectedIssueFilter === stat.id ? `1px solid ${stat.color}` : "1px solid transparent",
-                  borderRadius: 16,
-                  padding: "2px 8px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  cursor: "pointer",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#f8fafc",
-                  transition: "all 0.15s ease",
-                }}
-                title={`Filter by ${stat.label}`}
-              >
-                <span>{stat.icon}</span>
-                <span>{stat.count}</span>
-              </button>
-            ))}
-          </div>
-
           {/* MapLibre Canvas Container */}
           <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
 
