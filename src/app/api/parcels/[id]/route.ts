@@ -7,11 +7,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { withClient } from "@/lib/db";
 import { evaluateRules } from "@/lib/rules-engine";
 
+interface DetailCacheEntry {
+  data: any;
+  timestamp: number;
+}
+declare global {
+  // eslint-disable-next-line no-var
+  var parcelDetailGlobalCache: Map<string, DetailCacheEntry> | undefined;
+}
+if (!globalThis.parcelDetailGlobalCache) {
+  globalThis.parcelDetailGlobalCache = new Map<string, DetailCacheEntry>();
+}
+const parcelDetailCache = globalThis.parcelDetailGlobalCache;
+const DETAIL_CACHE_TTL_MS = 120 * 1000; // 120 seconds
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const cacheKey = `parcel_detail_${id}`;
+
+  const cached = parcelDetailCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < DETAIL_CACHE_TTL_MS) {
+    return NextResponse.json(cached.data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        "X-Cache-Status": "HIT",
+      },
+    });
+  }
 
   try {
     return await withClient(async (client) => {
@@ -73,7 +98,7 @@ export async function GET(
       restrictions.rows.length > 0 && "Restrictions",
     ].filter(Boolean) as string[];
 
-      return NextResponse.json({
+      const responsePayload = {
         parcel: { ...parcel, identifiers: identifiers.rows },
         ownership: ownership.rows,
         ror: ror.rows[0] || null,
@@ -108,6 +133,18 @@ export async function GET(
           source: parcel.source_system || "Bihar Bhumi RoR / e-Dharti",
           type: "OFFICIAL_CADASTRAL",
           disclaimer: "Official Cadastral Survey Data for SIH 2026.",
+        },
+      };
+
+      parcelDetailCache.set(cacheKey, {
+        data: responsePayload,
+        timestamp: Date.now(),
+      });
+
+      return NextResponse.json(responsePayload, {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+          "X-Cache-Status": "MISS",
         },
       });
     });

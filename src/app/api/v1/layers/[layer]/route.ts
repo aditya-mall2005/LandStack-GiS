@@ -70,6 +70,13 @@ const LAYER_QUERIES: Record<string, string> = {
     FROM gis.parcels`,
 };
 
+interface LayerCacheEntry {
+  data: any;
+  timestamp: number;
+}
+const layersCache = new Map<string, LayerCacheEntry>();
+const LAYER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ layer: string }> }
@@ -82,6 +89,16 @@ export async function GET(
       { error: `Unknown layer: ${layer}. Available: ${Object.keys(LAYER_QUERIES).join(', ')}` },
       { status: 404 }
     );
+  }
+
+  const cached = layersCache.get(layer);
+  if (cached && Date.now() - cached.timestamp < LAYER_CACHE_TTL_MS) {
+    return NextResponse.json(cached.data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "X-Cache-Status": "HIT",
+      },
+    });
   }
 
   try {
@@ -112,7 +129,17 @@ export async function GET(
       }),
     };
 
-    return NextResponse.json(fc);
+    layersCache.set(layer, {
+      data: fc,
+      timestamp: Date.now(),
+    });
+
+    return NextResponse.json(fc, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "X-Cache-Status": "MISS",
+      },
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: msg }, { status: 500 });

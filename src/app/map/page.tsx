@@ -52,17 +52,17 @@ const BASEMAP_DEFINITIONS: Record<string, any> = {
       }
     ]
   },
-  dark: {
+  streets: {
     version: 8,
-    name: "Dark Matter",
+    name: "Streets",
     sources: {
-      "carto-base": {
+      "carto-streets": {
         type: "raster",
         tiles: [
-          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-          "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png"
+          "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+          "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+          "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+          "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"
         ],
         tileSize: 256,
         attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
@@ -72,7 +72,7 @@ const BASEMAP_DEFINITIONS: Record<string, any> = {
       {
         id: "base-tiles",
         type: "raster",
-        source: "carto-base",
+        source: "carto-streets",
         minzoom: 0,
         maxzoom: 20
       }
@@ -82,7 +82,7 @@ const BASEMAP_DEFINITIONS: Record<string, any> = {
 
 const BASE_LAYERS_CONFIG = [
   { id: "parcels", label: "Cadastral Parcels", defaultChecked: true },
-  { id: "roads", label: "Roads", defaultChecked: false, color: "#f8fafc" },
+  { id: "roads", label: "Roads", defaultChecked: false, color: "#fbbf24" },
   { id: "satellite-layer", label: "Satellite Imagery", defaultChecked: true },
   { id: "village-boundary", label: "Village Boundary", defaultChecked: false, color: "#facc15" },
 ];
@@ -205,38 +205,67 @@ function MapContent() {
 
       const beforeLayer = map.getLayer("parcels-fill") ? "parcels-fill" : undefined;
 
-      // Handle polygon fill
-      if (!map.getLayer(`${sourceId}-fill`)) {
-        map.addLayer({
-          id: `${sourceId}-fill`,
-          type: "fill",
-          source: sourceId,
-          paint: {
-            "fill-color": color,
-            "fill-opacity": layerId === "village-boundary" ? 0.08 : 0.38,
-          },
-        }, beforeLayer);
-      }
+      if (layerId === "roads") {
+        // Multi-lane PWD road network line styling
+        if (!map.getLayer(`${sourceId}-casing`)) {
+          map.addLayer({
+            id: `${sourceId}-casing`,
+            type: "line",
+            source: sourceId,
+            paint: {
+              "line-color": "#0f172a",
+              "line-width": 5.5,
+              "line-opacity": 0.85,
+            },
+          }, beforeLayer);
+        }
+        if (!map.getLayer(`${sourceId}-core`)) {
+          map.addLayer({
+            id: `${sourceId}-core`,
+            type: "line",
+            source: sourceId,
+            paint: {
+              "line-color": "#fbbf24",
+              "line-width": 3.2,
+              "line-opacity": 1,
+            },
+          }, beforeLayer);
+        }
+      } else {
+        // Handle polygon fill
+        if (!map.getLayer(`${sourceId}-fill`)) {
+          map.addLayer({
+            id: `${sourceId}-fill`,
+            type: "fill",
+            source: sourceId,
+            paint: {
+              "fill-color": color,
+              "fill-opacity": layerId === "village-boundary" ? 0.08 : 0.38,
+            },
+          }, beforeLayer);
+        }
 
-      // Handle outline/lines
-      if (!map.getLayer(`${sourceId}-outline`)) {
-        map.addLayer({
-          id: `${sourceId}-outline`,
-          type: "line",
-          source: sourceId,
-          paint: {
-            "line-color": color,
-            "line-width": layerId === "village-boundary" ? 3 : 2,
-            "line-dasharray": layerId === "village-boundary" ? [4, 2] : [2, 1],
-            "line-opacity": 0.9,
-          },
-        });
+        // Handle outline/lines
+        if (!map.getLayer(`${sourceId}-outline`)) {
+          map.addLayer({
+            id: `${sourceId}-outline`,
+            type: "line",
+            source: sourceId,
+            paint: {
+              "line-color": layerId === "village-boundary" ? "#ca8a04" : color,
+              "line-width": layerId === "village-boundary" ? 3.5 : 2,
+              "line-dasharray": layerId === "village-boundary" ? [4, 2] : [2, 1],
+              "line-opacity": 0.95,
+            },
+          });
+        }
       }
 
       // Interactive hover tooltip for governance layers (only active when parcels layer is off)
-      (map as any).off("mousemove", `${sourceId}-fill`);
-      (map as any).on("mousemove", `${sourceId}-fill`, (e: any) => {
-        if (activeBaseLayersRef.current?.parcels) return;
+      const hoverTarget = layerId === "roads" ? `${sourceId}-core` : `${sourceId}-fill`;
+      (map as any).off("mousemove", hoverTarget);
+      (map as any).on("mousemove", hoverTarget, (e: any) => {
+        if (activeBaseLayersRef.current?.parcels && layerId !== "roads" && layerId !== "village-boundary") return;
         const f = e.features?.[0];
         if (!f) return;
         const pr = f.properties || {};
@@ -256,8 +285,8 @@ function MapContent() {
           .addTo(map);
       });
 
-      (map as any).off("mouseleave", `${sourceId}-fill`);
-      (map as any).on("mouseleave", `${sourceId}-fill`, () => {
+      (map as any).off("mouseleave", hoverTarget);
+      (map as any).on("mouseleave", hoverTarget, () => {
         if (popupRef.current) {
           popupRef.current.remove();
           popupRef.current = null;
@@ -276,8 +305,9 @@ function MapContent() {
         popupRef.current.remove();
         popupRef.current = null;
       }
-      if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
-      if (map.getLayer(`${sourceId}-outline`)) map.removeLayer(`${sourceId}-outline`);
+      [`${sourceId}-fill`, `${sourceId}-outline`, `${sourceId}-casing`, `${sourceId}-core`].forEach((lyr) => {
+        if (map.getLayer(lyr)) map.removeLayer(lyr);
+      });
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     } catch (err) {
       console.warn(`Error removing ${layerId}:`, err);
@@ -458,10 +488,32 @@ function MapContent() {
 
   const loadParcels = useCallback(async (map: maplibregl.Map) => {
     try {
-      const res = await apiClient.get(`/api/parcels?limit=1000&_t=${Date.now()}`);
+      // 1. Instant Cache Retrieval for 0ms visual rendering
+      if (!cachedGeoJson.current && typeof window !== "undefined") {
+        try {
+          const localCache = sessionStorage.getItem("landstack_parcels_cache");
+          if (localCache) {
+            const parsed = JSON.parse(localCache);
+            cachedGeoJson.current = parsed;
+            setupParcelLayers(map, parsed);
+          }
+        } catch {
+          // ignore cache read error
+        }
+      }
+
+      const res = await apiClient.get("/api/parcels?limit=1000");
       const geojson = res.data;
       cachedGeoJson.current = geojson;
       setupParcelLayers(map, geojson);
+
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("landstack_parcels_cache", JSON.stringify(geojson));
+        } catch {
+          // ignore storage quota error
+        }
+      }
 
       // Auto-select plot 1051 or first plot if none selected
       if (!selectedParcelRef.current && geojson.features?.length > 0) {
@@ -483,7 +535,7 @@ function MapContent() {
         loadSpatialLayer(map, "village-boundary", "#facc15");
       }
       if (activeBaseLayersRef.current["roads"]) {
-        loadSpatialLayer(map, "roads", "#f8fafc");
+        loadSpatialLayer(map, "roads", "#fbbf24");
       }
 
       return geojson;
@@ -567,16 +619,16 @@ function MapContent() {
 
     if (layerId === "parcels") {
       const vis = checked ? "visible" : "none";
-      ["parcels-fill", "parcels-conflict-hatch", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
+      ["parcels-fill", "parcels-conflict-hatch", "parcels-conflict-border", "parcels-outline", "parcels-labels", "parcels-highlight"].forEach((lyr) => {
         if (map.getLayer(lyr)) map.setLayoutProperty(lyr, "visibility", vis);
       });
     } else if (layerId === "satellite-layer") {
-      map.setStyle(checked ? BASEMAP_DEFINITIONS.satellite : BASEMAP_DEFINITIONS.dark);
+      map.setStyle(checked ? BASEMAP_DEFINITIONS.satellite : BASEMAP_DEFINITIONS.streets);
       map.once("styledata", () => {
         loadParcels(map);
       });
     } else if (layerId === "roads") {
-      if (checked) loadSpatialLayer(map, "roads", "#f8fafc");
+      if (checked) loadSpatialLayer(map, "roads", "#fbbf24");
       else removeSpatialLayer(map, "roads");
     } else if (layerId === "village-boundary") {
       if (checked) loadSpatialLayer(map, "village-boundary", "#facc15");

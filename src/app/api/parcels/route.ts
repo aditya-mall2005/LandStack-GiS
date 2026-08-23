@@ -10,13 +10,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// In-memory server cache for high-speed repeated loads
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+declare global {
+  // eslint-disable-next-line no-var
+  var parcelsGlobalCache: Map<string, CacheEntry> | undefined;
+}
+if (!globalThis.parcelsGlobalCache) {
+  globalThis.parcelsGlobalCache = new Map<string, CacheEntry>();
+}
+const parcelsCache = globalThis.parcelsGlobalCache;
+const CACHE_TTL_MS = 120 * 1000; // 120 seconds
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const bbox = searchParams.get("bbox");
   const limit = Math.min(parseInt(searchParams.get("limit") || "1000"), 3000);
+  const cacheKey = `parcels_${bbox || "all"}_${limit}`;
+
+  const cached = parcelsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return NextResponse.json(cached.data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        "X-Cache-Status": "HIT",
+      },
+    });
+  }
 
   try {
     let sql: string;
@@ -147,11 +170,15 @@ export async function GET(request: NextRequest) {
       }),
     };
 
+    parcelsCache.set(cacheKey, {
+      data: featureCollection,
+      timestamp: Date.now(),
+    });
+
     return NextResponse.json(featureCollection, {
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        "X-Cache-Status": "MISS",
       },
     });
   } catch (error: unknown) {
