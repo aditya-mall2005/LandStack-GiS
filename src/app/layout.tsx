@@ -186,12 +186,14 @@ function MobileBottomNav({ onToggleMenu }: { onToggleMenu: () => void }) {
 function AppShellWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
   const isLoginPage = pathname === "/login";
 
-  // Automatically close mobile menu when route changes
-  useEffect(() => {
+  // Automatically adjust mobile menu state on route transitions without cascading effects
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   if (isLoginPage) {
     return (

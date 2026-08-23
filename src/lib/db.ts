@@ -6,7 +6,6 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 
 declare global {
-  // eslint-disable-next-line no-var
   var postgresPool: Pool | undefined;
 }
 

@@ -12,7 +12,6 @@ interface DetailCacheEntry {
   timestamp: number;
 }
 declare global {
-  // eslint-disable-next-line no-var
   var parcelDetailGlobalCache: Map<string, DetailCacheEntry> | undefined;
 }
 if (!globalThis.parcelDetailGlobalCache) {

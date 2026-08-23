@@ -16,7 +16,6 @@ interface CacheEntry {
   timestamp: number;
 }
 declare global {
-  // eslint-disable-next-line no-var
   var parcelsGlobalCache: Map<string, CacheEntry> | undefined;
 }
 if (!globalThis.parcelsGlobalCache) {
