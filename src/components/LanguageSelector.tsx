@@ -146,27 +146,22 @@ export function LanguageSelector({ variant = "compact", className = "" }: Langua
         </div>
       )}
 
+      {/* Mobile Backdrop when open */}
+      {isOpen && (
+        <div
+          className="sidebar-backdrop active"
+          style={{ zIndex: 2050, background: "rgba(15, 23, 42, 0.25)" }}
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Language Modal / Dropdown Menu */}
       {isOpen && (
         <div
-          className="animate-in no-scrollbar"
-          style={{
-            position: "absolute",
-            top: variant === "sidebar" ? "auto" : "calc(100% + 6px)",
-            bottom: variant === "sidebar" ? 0 : "auto",
-            left: variant === "sidebar" ? "calc(100% + 10px)" : "auto",
-            right: variant === "sidebar" ? "auto" : 0,
-            width: 250,
-            maxWidth: "calc(100vw - 28px)",
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border-default)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--shadow-xl)",
-            zIndex: 1100,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
+          className={`animate-in no-scrollbar language-dropdown-menu ${
+            variant === "sidebar" ? "language-dropdown-sidebar" : ""
+          }`}
         >
           {/* Header & Search */}
           <div

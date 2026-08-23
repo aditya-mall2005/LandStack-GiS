@@ -1,7 +1,9 @@
 /**
  * LandStack — Pan-India Multi-Language Translation Dictionary
  * Supporting 11 Indian languages with regional land revenue terminology.
- */export interface LanguageMeta {
+ */
+
+export interface LanguageMeta {
   code: string;
   name: string;
   englishName: string;
