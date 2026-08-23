@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
 import { checkRouteAccess } from "@/lib/security/route-guard";
@@ -9,22 +9,12 @@ import apiClient from "@/lib/api-client";
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { currentUser } = useAuth();
-  const [accessState, setAccessState] = useState<{
-    allowed: boolean;
-    requiredRoles: string[];
-  }>({ allowed: true, requiredRoles: [] });
+  const accessState = checkRouteAccess(pathname, currentUser.role);
 
   useEffect(() => {
-    const result = checkRouteAccess(pathname, currentUser.role);
-    setAccessState({
-      allowed: result.allowed,
-      requiredRoles: result.requiredRoles,
-    });
-
     // Log security event for audit trail when access is denied
-    if (!result.allowed) {
+    if (!accessState.allowed) {
       apiClient.post("/api/v1/security/policy-check", {
         userId: currentUser.id,
         userRole: currentUser.role,
@@ -42,7 +32,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         },
       }).catch(() => {});
     }
-  }, [pathname, currentUser]);
+  }, [accessState.allowed, pathname, currentUser]);
 
   if (!accessState.allowed) {
     return (

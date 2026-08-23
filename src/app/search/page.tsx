@@ -43,8 +43,7 @@ function SearchContent() {
   const [query, setQuery] = useState(initialQ);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-
+  const [searched, setSearched] = useState(Boolean(initialQ));
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) return;
     setLoading(true);
@@ -60,11 +59,32 @@ function SearchContent() {
   }, []);
 
   useEffect(() => {
-    if (initialQ) {
-      setQuery(initialQ);
-      doSearch(initialQ);
-    }
-  }, [initialQ, doSearch]);
+    if (!initialQ || initialQ.length < 2) return;
+    let isMounted = true;
+    const runSearch = async () => {
+      try {
+        const res = await apiClient.get(`/api/v1/search?q=${encodeURIComponent(initialQ)}&limit=30`);
+        if (isMounted) {
+          setResults(res.data.results || []);
+          setSearched(true);
+        }
+      } catch {
+        if (isMounted) {
+          setResults([]);
+          setSearched(true);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    runSearch();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialQ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

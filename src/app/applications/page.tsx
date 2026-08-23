@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
   SUBMITTED: { label: "Submitted", class: "badge-info" },
@@ -44,46 +42,50 @@ export default function ApplicationsPage() {
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchApplications = useCallback(async () => {
-    try {
-      setLoading(true);
-      const url = currentUser.role !== "CITIZEN" && currentUser.role !== "ADMIN" && currentUser.role !== "AUDITOR"
-        ? (currentUser.role === "REGISTRATION_OFFICER" ? "/api/v1/applications?department=Registration"
-          : currentUser.role === "PLANNING_OFFICER" ? "/api/v1/applications?department=Planning"
-          : currentUser.role === "TAX_OFFICER" ? "/api/v1/applications?department=Municipality"
-          : "/api/v1/applications?department=Revenue")
-        : "/api/v1/applications";
+  useEffect(() => {
+    let isMounted = true;
+    const loadApps = async () => {
+      try {
+        const url = currentUser.role !== "CITIZEN" && currentUser.role !== "ADMIN" && currentUser.role !== "AUDITOR"
+          ? (currentUser.role === "REGISTRATION_OFFICER" ? "/api/v1/applications?department=Registration"
+            : currentUser.role === "PLANNING_OFFICER" ? "/api/v1/applications?department=Planning"
+            : currentUser.role === "TAX_OFFICER" ? "/api/v1/applications?department=Municipality"
+            : "/api/v1/applications?department=Revenue")
+          : "/api/v1/applications";
 
-      const res = await apiClient.get(url);
-      if (res.data?.applications?.length > 0) {
-        setApplications(res.data.applications);
-        setSelectedId(res.data.applications[0].application_no);
+        const res = await apiClient.get(url);
+        if (isMounted && res.data?.applications?.length > 0) {
+          setApplications(res.data.applications);
+          setSelectedId((prev) => prev || res.data.applications[0].application_no);
+        }
+      } catch (err) {
+        console.error("Failed to load applications:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load applications:", err);
-    } finally {
-      setLoading(false);
-    }
+    };
+    loadApps();
+    return () => {
+      isMounted = false;
+    };
   }, [currentUser]);
 
-  const fetchDetail = useCallback(async (appNo: string) => {
-    try {
-      const res = await apiClient.get(`/api/v1/applications/${appNo}`);
-      setSelectedDetail(res.data);
-    } catch (err) {
-      console.error("Failed to fetch detail:", err);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
-
-  useEffect(() => {
-    if (selectedId) {
-      fetchDetail(selectedId);
-    }
-  }, [selectedId, fetchDetail]);
+    if (!selectedId) return;
+    let isMounted = true;
+    const loadDetail = async () => {
+      try {
+        const res = await apiClient.get(`/api/v1/applications/${selectedId}`);
+        if (isMounted) setSelectedDetail(res.data);
+      } catch (err) {
+        console.error("Failed to fetch detail:", err);
+      }
+    };
+    loadDetail();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedId]);
 
   const app = selectedDetail?.application || applications.find((a) => a.application_no === selectedId);
   const history = selectedDetail?.history || [];

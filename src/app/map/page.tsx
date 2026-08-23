@@ -7,8 +7,6 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // Configure worker URL for Next.js Turbopack compatibility
 if (typeof window !== "undefined") {
   if ((maplibregl as any).config) {

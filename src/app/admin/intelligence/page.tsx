@@ -5,8 +5,6 @@ import Link from "next/link";
 import { SAMPLE_DOCUMENTS } from "@/lib/ai/document-extract";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export default function IntelligenceDashboard() {
   const [satelliteDetections, setSatelliteDetections] = useState<any[]>([]);
   const [anomalies, setAnomalies] = useState<any[]>([]);

@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const SEVERITY_BADGES: Record<string, string> = {
   CRITICAL: "badge-error",
   HIGH: "badge-error",
@@ -21,7 +19,6 @@ export default function ConflictsPage() {
 
   const fetchConflicts = useCallback(async () => {
     try {
-      setLoading(true);
       const url = severityFilter === "ALL" ? "/api/v1/ai/conflicts" : `/api/v1/ai/conflicts?severity=${severityFilter}`;
       const res = await apiClient.get(url);
       setConflicts(res.data.conflicts || []);
@@ -33,8 +30,23 @@ export default function ConflictsPage() {
   }, [severityFilter]);
 
   useEffect(() => {
-    fetchConflicts();
-  }, [fetchConflicts]);
+    let isMounted = true;
+    const loadConflicts = async () => {
+      try {
+        const url = severityFilter === "ALL" ? "/api/v1/ai/conflicts" : `/api/v1/ai/conflicts?severity=${severityFilter}`;
+        const res = await apiClient.get(url);
+        if (isMounted) setConflicts(res.data.conflicts || []);
+      } catch (err) {
+        console.error("Failed to load conflicts:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadConflicts();
+    return () => {
+      isMounted = false;
+    };
+  }, [severityFilter]);
 
   const resolveConflict = async (conflictId: string) => {
     try {

@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
 

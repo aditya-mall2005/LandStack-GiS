@@ -6,8 +6,6 @@ import { calculateSlaStatus } from "@/lib/workflow";
 import { useAuth } from "@/lib/security/auth-context";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const DEPARTMENTS = ["All", "Revenue", "Registration", "Planning", "Municipality", "Environment"];
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
@@ -27,17 +25,15 @@ export default function OfficerPortal() {
   const [selectedAppNo, setSelectedAppNo] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
   const [parcel360, setParcel360] = useState<any | null>(null);
-  const [selectedDept, setSelectedDept] = useState("All");
+  const [selectedDept, setSelectedDept] = useState(() => {
+    if (currentUser.role === "REGISTRATION_OFFICER") return "Registration";
+    if (currentUser.role === "PLANNING_OFFICER") return "Planning";
+    if (currentUser.role === "TAX_OFFICER") return "Municipality";
+    if (currentUser.role === "REVENUE_OFFICER") return "Revenue";
+    return "All";
+  });
   const [actionLoading, setActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Set default department from persona if relevant
-  useEffect(() => {
-    if (currentUser.role === "REGISTRATION_OFFICER") setSelectedDept("Registration");
-    else if (currentUser.role === "PLANNING_OFFICER") setSelectedDept("Planning");
-    else if (currentUser.role === "TAX_OFFICER") setSelectedDept("Municipality");
-    else if (currentUser.role === "REVENUE_OFFICER") setSelectedDept("Revenue");
-  }, [currentUser]);
 
   // Action Modal State
   const [modalMode, setModalMode] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | "ESCALATE" | null>(null);
@@ -46,21 +42,18 @@ export default function OfficerPortal() {
 
   const fetchApplications = useCallback(async () => {
     try {
-      setLoading(true);
       const url = selectedDept === "All" ? "/api/v1/applications" : `/api/v1/applications?department=${selectedDept}`;
       const res = await apiClient.get(url);
       if (res.data?.applications) {
         setApplications(res.data.applications);
-        if (!selectedAppNo && res.data.applications.length > 0) {
-          setSelectedAppNo(res.data.applications[0].application_no);
-        }
+        setSelectedAppNo((prev) => prev || (res.data.applications[0]?.application_no ?? null));
       }
     } catch (err) {
       console.error("Failed to load officer applications:", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedDept, selectedAppNo]);
+  }, [selectedDept]);
 
   const fetchDetail = useCallback(async (appNo: string) => {
     try {
@@ -78,14 +71,50 @@ export default function OfficerPortal() {
   }, []);
 
   useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
+    let isMounted = true;
+    const loadApps = async () => {
+      try {
+        const url = selectedDept === "All" ? "/api/v1/applications" : `/api/v1/applications?department=${selectedDept}`;
+        const res = await apiClient.get(url);
+        if (isMounted && res.data?.applications) {
+          setApplications(res.data.applications);
+          setSelectedAppNo((prev) => prev || (res.data.applications[0]?.application_no ?? null));
+        }
+      } catch (err) {
+        console.error("Failed to load officer applications:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadApps();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDept]);
 
   useEffect(() => {
-    if (selectedAppNo) {
-      fetchDetail(selectedAppNo);
-    }
-  }, [selectedAppNo, fetchDetail]);
+    if (!selectedAppNo) return;
+    let isMounted = true;
+    const loadDetail = async () => {
+      try {
+        const res = await apiClient.get(`/api/v1/applications/${selectedAppNo}`);
+        if (isMounted) {
+          setSelectedDetail(res.data);
+          if (res.data?.application?.parcel_id || res.data?.application?.parcel_ulpin) {
+            const pId = res.data.application.parcel_id || res.data.application.parcel_ulpin;
+            const pRes = await apiClient.get(`/api/parcels/${pId}`);
+            if (isMounted) setParcel360(pRes.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch detail:", err);
+      }
+    };
+    loadDetail();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedAppNo]);
 
   const executeAction = async (newStatus: string, actionComments: string, extra?: any) => {
     if (!selectedAppNo) return;
@@ -395,7 +424,7 @@ export default function OfficerPortal() {
                         <div style={{ color: "var(--text-secondary)", fontSize: 10 }}>
                           By: {h.performed_by} ({h.role || "SYSTEM"}) • {new Date(h.created_at).toLocaleString()}
                         </div>
-                        {h.comments && <div style={{ color: "var(--text-accent)", marginTop: 2 }}>"{h.comments}"</div>}
+                        {h.comments && <div style={{ color: "var(--text-accent)", marginTop: 2 }}>&ldquo;{h.comments}&rdquo;</div>}
                       </div>
                     </div>
                   ))}

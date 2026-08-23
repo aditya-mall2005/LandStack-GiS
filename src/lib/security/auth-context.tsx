@@ -151,27 +151,24 @@ const AUTH_STORAGE_KEY = "landstack_active_user";
 const AUTH_EVENT_NAME = "landstack_auth_change";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Default to Revenue Officer Vikram Singh
-  const [currentUser, setCurrentUser] = useState<UserPersona>(DEMO_PERSONAS[1]);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Initialize from localStorage or cookies on client mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const match = DEMO_PERSONAS.find((p) => p.id === parsed.id || p.role === parsed.role);
-        if (match) {
-          setCurrentUser(match);
+  // Initialize from localStorage or default to Revenue Officer Vikram Singh
+  const [currentUser, setCurrentUser] = useState<UserPersona>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const match = DEMO_PERSONAS.find((p) => p.id === parsed.id || p.role === parsed.role);
+          if (match) return match;
         }
+      } catch (e) {
+        console.warn("Auth initialization note:", e);
       }
-    } catch (e) {
-      console.warn("Auth initialization note:", e);
-    } finally {
-      setIsInitialized(true);
     }
+    return DEMO_PERSONAS[1];
+  });
 
+  useEffect(() => {
     const handleAuthEvent = (e: any) => {
       if (e.detail) {
         setCurrentUser(e.detail);

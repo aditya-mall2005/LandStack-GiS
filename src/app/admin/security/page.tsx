@@ -6,8 +6,6 @@ import { ROLE_DEFINITIONS } from "@/lib/security/rbac-matrix";
 import { UserRole, Permission } from "@/lib/security/types";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const ACTIONS_LIST: { id: Permission; label: string; group: string }[] = [
   { id: "SEARCH_PUBLIC_PARCEL", label: "Search Public Parcel & Geometry", group: "Public GIS" },
   { id: "VIEW_PUBLIC_GIS", label: "View Public Basemap & Zoning", group: "Public GIS" },
@@ -63,15 +61,6 @@ export default function SecurityAuditConsole() {
     }
   }, [roleFilter, resultFilter]);
 
-  const fetchThreats = useCallback(async () => {
-    try {
-      const res = await apiClient.get("/api/v1/security/threats");
-      setThreats(res.data.threats || []);
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
-
   const fetchConsents = useCallback(async () => {
     try {
       const res = await apiClient.get("/api/v1/security/consents");
@@ -81,21 +70,37 @@ export default function SecurityAuditConsole() {
     }
   }, []);
 
-  const fetchPiiPreview = useCallback(async () => {
-    try {
-      const res = await apiClient.get("/api/v1/security/mask-preview?id=1420");
-      setPiiData(res.data.projections);
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchAuditLogs();
-    fetchThreats();
-    fetchConsents();
-    fetchPiiPreview();
-  }, [fetchAuditLogs, fetchThreats, fetchConsents, fetchPiiPreview]);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        let url = "/api/v1/security/audit-logs?";
+        if (roleFilter !== "ALL") url += `role=${roleFilter}&`;
+        if (resultFilter !== "ALL") url += `result=${resultFilter}&`;
+
+        const [logsRes, threatsRes, consentsRes, piiRes] = await Promise.all([
+          apiClient.get(url),
+          apiClient.get("/api/v1/security/threats"),
+          apiClient.get("/api/v1/security/consents"),
+          apiClient.get("/api/v1/security/mask-preview?id=1420"),
+        ]);
+
+        if (isMounted) {
+          setAuditLogs(logsRes.data.logs || []);
+          setThreats(threatsRes.data.threats || []);
+          setConsents(consentsRes.data.consents || []);
+          setPiiData(piiRes.data.projections);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [roleFilter, resultFilter]);
 
   const handleEvaluateSimulator = async () => {
     setEvaluating(true);
@@ -455,7 +460,7 @@ export default function SecurityAuditConsole() {
                 </div>
               ) : (
                 <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "var(--space-2xl)", fontSize: 12 }}>
-                  Configure the parameters on the left and click "Evaluate Access Policy" to see the zero-trust engine in action.
+                  Configure the parameters on the left and click &quot;Evaluate Access Policy&quot; to see the zero-trust engine in action.
                 </div>
               )}
             </div>

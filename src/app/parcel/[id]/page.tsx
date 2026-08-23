@@ -5,8 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const TABS = [
   { id: "overview", label: "Overview", icon: "📊" },
   { id: "ownership", label: "Ownership", icon: "👤" },
@@ -46,17 +44,23 @@ export default function ParcelPage() {
 
   useEffect(() => {
     if (!params.id) return;
-    setLoading(true);
+    let isMounted = true;
     apiClient
       .get(`/api/parcels/${params.id}`)
       .then((res) => {
-        setData(res.data);
-        setLoading(false);
+        if (isMounted) {
+          setData(res.data);
+          setLoading(false);
+        }
       })
       .catch((err) => {
         console.error(err);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.id]);
 
   if (loading) {

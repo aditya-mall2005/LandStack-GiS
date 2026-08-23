@@ -40,7 +40,7 @@ export default function LoginPage() {
         </div>
         <h1 className="page-title" style={{ fontSize: 32 }}>Select Role / Persona</h1>
         <p className="page-subtitle" style={{ maxWidth: 680, margin: "8px auto 0", fontSize: 14, lineHeight: 1.6 }}>
-          Experience LandStack's role-based access control. Switch between Citizen, Revenue Officer, Sub-Registrar, Town Planner, Tax Officer, State Admin, and C&AG Auditor.
+          Experience LandStack&apos;s role-based access control. Switch between Citizen, Revenue Officer, Sub-Registrar, Town Planner, Tax Officer, State Admin, and C&AG Auditor.
         </p>
 
         {/* Current Active User Status Bar */}

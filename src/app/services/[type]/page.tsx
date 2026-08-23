@@ -90,7 +90,7 @@ function ServiceFormContent() {
             </div>
           </div>
           <div style={{ display: "flex", gap: "var(--space-sm)", justifyContent: "center" }}>
-            <button className="btn btn-primary" onClick={() => { window.location.href = "/applications"; }}>Track Application</button>
+            <button className="btn btn-primary" onClick={() => router.push("/applications")}>Track Application</button>
             <button className="btn btn-secondary" onClick={() => router.push("/services")}>Back to Services</button>
           </div>
         </div>

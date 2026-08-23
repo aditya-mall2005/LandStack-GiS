@@ -5,8 +5,6 @@ import Link from "next/link";
 import { STATE_ADAPTER_REGISTRY } from "@/lib/adapters";
 import apiClient from "@/lib/api-client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const DEPARTMENT_APIS = [
   { id: "revenue", name: "Revenue & Land Records API", endpoint: "/api/v1/mock/revenue/1420", system: "Bihar Bhumi / Jamabandi Panji-II", status: "CONNECTED", pingMs: 24, lastSync: "2 mins ago" },
   { id: "registration", name: "Registration & Deeds API", endpoint: "/api/v1/mock/registration/1420", system: "e-Nibandhan Registry", status: "CONNECTED", pingMs: 38, lastSync: "5 mins ago" },
@@ -180,7 +178,7 @@ export default function AdaptersStudio() {
             </div>
           ) : (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: 12, textAlign: "center", minHeight: 280 }}>
-              Click "⚡ Run State Adapter" to trigger schema transformation, unit conversion, and canonical mapping.
+              Click &quot;⚡ Run State Adapter&quot; to trigger schema transformation, unit conversion, and canonical mapping.
             </div>
           )}
         </div>
