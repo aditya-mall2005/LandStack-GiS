@@ -121,7 +121,7 @@ export default function ApplicationsPage() {
           <p style={{ marginTop: "var(--space-sm)" }}>Loading applications...</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: app ? "1fr 1.2fr" : "1fr", gap: "var(--space-md)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: app ? "repeat(auto-fit, minmax(320px, 1fr))" : "1fr", gap: "var(--space-md)" }}>
           {/* Application List */}
           <div style={{ display: "grid", gap: "var(--space-md)" }}>
             {applications.map((a) => {

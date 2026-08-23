@@ -47,21 +47,24 @@ export default function LoginPage() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 12,
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: 8,
             marginTop: 18,
-            padding: "8px 20px",
+            padding: "8px 16px",
             background: "rgba(15, 23, 42, 0.8)",
             border: "1px solid rgba(59, 130, 246, 0.3)",
             borderRadius: 30,
-            fontSize: 13,
+            fontSize: 12,
             color: "#e2e8f0",
+            maxWidth: "100%",
           }}
         >
           <span>Currently Active:</span>
-          <strong style={{ color: "#38bdf8", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>{React.createElement(getLucideIcon(currentUser.icon), { size: 14 })}</span> {currentUser.name} ({currentUser.title})
+          <strong style={{ color: "#38bdf8", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span>{React.createElement(getLucideIcon(currentUser.icon), { size: 14 })}</span> {currentUser.name}
           </strong>
-          <span style={{ fontSize: 11, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
+          <span style={{ fontSize: 10, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
             {currentUser.role}
           </span>
         </div>
@@ -82,7 +85,7 @@ export default function LoginPage() {
       </div>
 
       {/* Personas Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "var(--space-lg)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "var(--space-md)" }}>
         {DEMO_PERSONAS.map((account) => {
           const isCurrentActive = currentUser.id === account.id || currentUser.role === account.role;
           const isSelected = selectedPersona.id === account.id;
@@ -110,6 +113,7 @@ export default function LoginPage() {
                 justifyContent: "space-between",
                 position: "relative",
                 overflow: "hidden",
+                padding: "var(--space-md)",
               }}
               onClick={() => handleLogin(account)}
             >
@@ -136,11 +140,11 @@ export default function LoginPage() {
 
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    {(() => { const Icon = getLucideIcon(account.icon); return <Icon size={24} color="var(--text-primary)" />; })()}
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-subtle)", flexShrink: 0 }}>
+                    {(() => { const Icon = getLucideIcon(account.icon); return <Icon size={22} color="var(--text-primary)" />; })()}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)" }}>{account.name}</div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text-primary)" }}>{account.name}</div>
                     <div style={{ fontSize: 12, color: "var(--text-accent)", fontWeight: 600 }}>{account.title}</div>
                   </div>
                 </div>
@@ -150,20 +154,20 @@ export default function LoginPage() {
                   <span className="badge badge-info" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 4 }}><Lucide.MapPin size={12} /> {account.jurisdiction.split(",")[0]}</span>
                 </div>
 
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 16 }}>
                   {account.description}
                 </p>
               </div>
 
               <div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
-                  <span>Default Landing: <strong style={{ color: "#e2e8f0" }}>{account.landingUrl.split("?")[0]}</strong></span>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4 }}>
+                  <span>Landing: <strong style={{ color: "var(--text-primary)" }}>{account.landingUrl.split("?")[0]}</strong></span>
                   <span style={{ fontFamily: "monospace" }}>{account.role}</span>
                 </div>
 
                 <button
                   className={`btn ${isCurrentActive ? "btn-outline" : "btn-primary"}`}
-                  style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
+                  style={{ width: "100%", justifyContent: "center", fontWeight: 700, padding: "10px 16px" }}
                   disabled={loggingIn}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -173,8 +177,8 @@ export default function LoginPage() {
                   {loggingIn && isSelected
                     ? "Switching Persona..."
                     : isCurrentActive
-                    ? `Continue as ${account.name.split(" ")[0]} →`
-                    : `Sign in as ${account.title.split(" ")[0]} →`}
+                    ? `Continue as ${account.name} →`
+                    : `Sign in as ${account.name} →`}
                 </button>
               </div>
             </div>

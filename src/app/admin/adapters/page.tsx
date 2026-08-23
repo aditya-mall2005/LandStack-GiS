@@ -74,8 +74,8 @@ export default function AdaptersStudio() {
         </div>
       </div>
 
-      {/* State Selector Buttons */}
-      <div style={{ display: "flex", gap: 10, marginBottom: "var(--space-lg)" }}>
+      {/* State Selector Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap" }}>
         {[
           { code: "BR", name: "Bihar (Khatiyan / Khesra)", icon: "🌾" },
           { code: "TN", name: "Tamil Nadu (Patta / Chitta)", icon: "🏛️" },
@@ -85,7 +85,7 @@ export default function AdaptersStudio() {
             key={s.code}
             onClick={() => setSelectedState(s.code as any)}
             className={`btn ${selectedState === s.code ? "btn-primary" : "btn-outline"}`}
-            style={{ padding: "8px 16px", fontSize: 13 }}
+            style={{ padding: "8px 16px", fontSize: 13, flexShrink: 0 }}
           >
             {s.icon} {s.name}
           </button>
@@ -103,7 +103,7 @@ export default function AdaptersStudio() {
       </div>
 
       {/* Transformation Sandbox (2 Columns) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}>
         {/* Left: Raw State Payload Editor */}
         <div className="card" style={{ display: "flex", flexDirection: "column" }}>
           <div className="card-header">

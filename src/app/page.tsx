@@ -127,20 +127,20 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Link href="/login" className="btn btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", width: "100%", maxWidth: 360 }}>
+          <Link href="/login" className="btn btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, flex: "1 1 120px", justifyContent: "center" }}>
             <Lucide.Repeat size={14} /> Switch Role
           </Link>
           {role === "CITIZEN" ? (
-            <Link href="/services" className="btn btn-primary" style={{ fontSize: 12 }}>
+            <Link href="/services" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
               <Lucide.Plus size={14} /> Apply Service
             </Link>
           ) : role === "ADMIN" || role === "AUDITOR" ? (
-            <Link href="/admin/security" className="btn btn-primary" style={{ fontSize: 12 }}>
+            <Link href="/admin/security" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
               <Lucide.Shield size={14} /> Security & Audit
             </Link>
           ) : (
-            <Link href="/officer" className="btn btn-primary" style={{ fontSize: 12 }}>
+            <Link href="/officer" className="btn btn-primary" style={{ fontSize: 12, flex: "1 1 120px", justifyContent: "center" }}>
               <Lucide.Briefcase size={14} /> Officer Desk
             </Link>
           )}
@@ -148,8 +148,8 @@ export default function Dashboard() {
       </div>
 
       {/* Hero Universal Search */}
-      <div className="hero" style={{ padding: "var(--space-lg) var(--space-xl)", marginBottom: "var(--space-lg)" }}>
-        <h2 className="hero-title" style={{ fontSize: 24, marginBottom: 4 }}>Land 360° Unified Registry</h2>
+      <div className="hero" style={{ padding: "var(--space-md) var(--space-lg)", marginBottom: "var(--space-lg)" }}>
+        <h2 className="hero-title" style={{ fontSize: 22, marginBottom: 4 }}>Land 360° Unified Registry</h2>
         <p className="hero-subtitle" style={{ fontSize: 13, maxWidth: 650, margin: "0 auto 16px" }}>
           Search any parcel to view unified land records across departments — RoR Khatiyan, deeds, encumbrance, cadastral GIS & tax.
         </p>
@@ -157,7 +157,7 @@ export default function Dashboard() {
           <span className="hero-search-icon"><Lucide.Search size={18} /></span>
           <input
             className="input"
-            placeholder="Search by ULPIN (e.g. IN-BR-10-00000001-62), Survey/Khesra No., or Raiyat Name..."
+            placeholder="Search by ULPIN (e.g. 1051), Survey No, or Raiyat..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ paddingLeft: 48, fontSize: 13 }}

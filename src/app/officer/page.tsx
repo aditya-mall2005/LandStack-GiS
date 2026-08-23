@@ -168,16 +168,16 @@ export default function OfficerPortal() {
       <div className="page-header">
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 24 }}>{currentUser.icon || "👨‍💼"}</span>
+            <span style={{ fontSize: 24 }}>👨‍💼</span>
             <h1 className="page-title">Department Officer Portal & Workflow Engine</h1>
           </div>
           <p className="page-subtitle">Multi-department statutory case review, parcel-linked compliance, and immutable audit trailing.</p>
         </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(15, 23, 42, 0.8)", border: "1px solid var(--border-color)", padding: "4px 12px", borderRadius: "var(--radius-md)" }}>
-            <span style={{ fontSize: 16 }}>{currentUser.icon}</span>
+        <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-elevated)", border: "1px solid var(--border-default)", padding: "6px 12px", borderRadius: "var(--radius-md)" }}>
+            <span style={{ fontSize: 16 }}>🏛️</span>
             <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#f8fafc" }}>{currentUser.name}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{currentUser.name}</div>
               <div style={{ fontSize: 10, color: "var(--text-accent)" }}>{currentUser.title.split("(")[0]}</div>
             </div>
             <Link href="/login" className="badge badge-info" style={{ textDecoration: "none", fontSize: 10, cursor: "pointer" }}>
@@ -210,13 +210,13 @@ export default function OfficerPortal() {
       </div>
 
       {/* Department Filter Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap" }}>
         {DEPARTMENTS.map((dept) => (
           <button
             key={dept}
             onClick={() => setSelectedDept(dept)}
             className={`btn ${selectedDept === dept ? "btn-primary" : "btn-outline"}`}
-            style={{ fontSize: 12, padding: "6px 14px" }}
+            style={{ fontSize: 12, padding: "6px 14px", flexShrink: 0 }}
           >
             {dept === "Revenue" && "🌾 "}
             {dept === "Registration" && "📝 "}
@@ -229,7 +229,7 @@ export default function OfficerPortal() {
       </div>
 
       {/* Main 2-Column Interface: Queue on Left, Land 360 Case Viewer on Right */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.35fr", gap: "var(--space-md)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: app ? "repeat(auto-fit, minmax(320px, 1fr))" : "1fr", gap: "var(--space-md)" }}>
         {/* Left: Application Inbox */}
         <div className="card">
           <div className="card-header">
@@ -318,7 +318,7 @@ export default function OfficerPortal() {
               </div>
 
               {/* Navigation Sub-Tabs */}
-              <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--border-color)", paddingBottom: 8 }}>
+              <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--border-color)", paddingBottom: 8, overflowX: "auto", whiteSpace: "nowrap" }}>
                 {[
                   { id: "overview", label: "Overview & GIS" },
                   { id: "prechecks", label: "Automated Pre-Checks" },
@@ -329,7 +329,7 @@ export default function OfficerPortal() {
                     key={t.id}
                     onClick={() => setActiveTab(t.id as any)}
                     className={`btn ${activeTab === t.id ? "btn-primary" : "btn-outline"}`}
-                    style={{ fontSize: 11, padding: "4px 10px" }}
+                    style={{ fontSize: 11, padding: "4px 10px", flexShrink: 0 }}
                   >
                     {t.label}
                   </button>
@@ -339,7 +339,7 @@ export default function OfficerPortal() {
               {/* Tab 1: Overview */}
               {activeTab === "overview" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
                     <div style={{ background: "var(--bg-secondary)", padding: 10, borderRadius: 8 }}>
                       <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Purpose of Request</div>
                       <div style={{ fontSize: 12, fontWeight: 600 }}>{app.purpose || "Statutory compliance"}</div>
@@ -354,7 +354,7 @@ export default function OfficerPortal() {
                   {parcel360?.parcel && (
                     <div style={{ background: "var(--bg-secondary)", padding: 12, borderRadius: 8 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "var(--text-accent)" }}>📍 Linked Cadastral Parcel Snapshot</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 11 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, fontSize: 11 }}>
                         <div><span style={{ color: "var(--text-secondary)" }}>Survey No:</span> <strong>{parcel360.parcel.survey_number}</strong></div>
                         <div><span style={{ color: "var(--text-secondary)" }}>Area:</span> <strong>{Number(parcel360.parcel.area).toLocaleString()} sqm</strong></div>
                         <div><span style={{ color: "var(--text-secondary)" }}>Land Use:</span> <strong>{parcel360.parcel.land_type}</strong></div>

@@ -1278,7 +1278,7 @@ function MapContent() {
                 </div>
 
                 {/* Bottom View Land 360 Button */}
-                <div style={{ padding: 14, borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                <div style={{ padding: 14, paddingBottom: isMobile ? 24 : 14, borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
                   <Link href={`/parcel/${p?.parcel_id || p?.ulpin || "1051"}`} style={{ textDecoration: "none" }}>
                     <button
                       style={{

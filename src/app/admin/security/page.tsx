@@ -180,7 +180,7 @@ export default function SecurityAuditConsole() {
       </div>
 
       {/* Main Security Console Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-lg)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-lg)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap" }}>
         {[
           { id: "audit", label: "📜 Immutable Audit Trail", count: auditLogs.length },
           { id: "simulator", label: "⚡ RBAC + ABAC Policy Simulator", count: "Live" },
@@ -192,7 +192,7 @@ export default function SecurityAuditConsole() {
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
             className={`btn ${activeTab === t.id ? "btn-primary" : "btn-outline"}`}
-            style={{ fontSize: 12, padding: "6px 14px" }}
+            style={{ fontSize: 12, padding: "6px 14px", flexShrink: 0 }}
           >
             {t.label} <span className="badge badge-neutral" style={{ fontSize: 10, marginLeft: 6 }}>{t.count}</span>
           </button>
@@ -201,7 +201,7 @@ export default function SecurityAuditConsole() {
 
       {/* Tab 1: Immutable Audit Trail Explorer */}
       {activeTab === "audit" && (
-        <div style={{ display: "grid", gridTemplateColumns: selectedAuditLog ? "1.2fr 0.9fr" : "1fr", gap: "var(--space-md)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: selectedAuditLog ? "repeat(auto-fit, minmax(320px, 1fr))" : "1fr", gap: "var(--space-md)" }}>
           <div className="card">
             <div className="card-header">
               <h3 className="card-title">Append-Only Audit Log Records</h3>
@@ -580,7 +580,7 @@ export default function SecurityAuditConsole() {
 
       {/* Tab 5: PII Protection & Data Projection */}
       {activeTab === "pii" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}>
           <div className="card">
             <div className="card-header">
               <h3 className="card-title">1. Public Citizen View (PII Masked)</h3>

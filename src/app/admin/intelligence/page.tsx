@@ -87,19 +87,14 @@ export default function IntelligenceDashboard() {
         </div>
       </div>
 
-      {/* Main Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-lg)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10 }}>
-        {[
-          { id: "satellite", label: "🛰️ Satellite Change Detection", count: satelliteDetections.length },
-          { id: "anomalies", label: "⚡ Transaction Risk & Anomaly Radar", count: anomalies.length },
-          { id: "ocr", label: "📄 Document Intelligence & OCR", count: "Live" },
-          { id: "assistant", label: "💬 AI Decision-Support Assistant", count: "Bot" }
-        ].map((t) => (
+      {/* Sub-Module Navigation */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)", borderBottom: "1px solid var(--border-color)", paddingBottom: 10, overflowX: "auto", whiteSpace: "nowrap" }}>
+        {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
             className={`btn ${activeTab === t.id ? "btn-primary" : "btn-outline"}`}
-            style={{ fontSize: 12, padding: "6px 14px" }}
+            style={{ fontSize: 12, padding: "6px 14px", flexShrink: 0 }}
           >
             {t.label} <span className="badge badge-neutral" style={{ fontSize: 10, marginLeft: 6 }}>{t.count}</span>
           </button>
@@ -108,7 +103,7 @@ export default function IntelligenceDashboard() {
 
       {/* Tab 1: Satellite Change Detection & Slider */}
       {activeTab === "satellite" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "var(--space-md)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-md)" }}>
           {/* Visual Before / After Comparison Slider */}
           <div className="card">
             <div className="card-header">
