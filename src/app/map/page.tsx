@@ -663,21 +663,33 @@ function MapContent() {
   const buildingPermissions: any[] = Array.isArray(selectedParcel?.building_permissions) ? selectedParcel.building_permissions : [];
   const taxes: any[] = Array.isArray(selectedParcel?.tax) ? selectedParcel.tax : [];
 
-  const areaNum = Number(p?.area || 0);
+    const areaNum = Number(p?.area || 0);
   const areaAcres = areaNum > 0 ? (areaNum / 4046.86).toFixed(2) : "0.45";
   const areaSqm = areaNum > 0 ? Math.round(areaNum).toLocaleString("en-IN") : "1,820";
   const coordsText = p?.centroid_lat && p?.centroid_lng
     ? `${Number(p.centroid_lat).toFixed(4)}, ${Number(p.centroid_lng).toFixed(4)}`
     : "26.3600, 86.1195";
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setShowLayers(false);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", background: "var(--bg-app, #ffffff)", color: "var(--text-primary, #0F172A)", overflow: "hidden", fontFamily: "Inter, -apple-system, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", background: "var(--bg-app, #ffffff)", color: "var(--text-primary, #0F172A)", overflow: "hidden", fontFamily: "Inter, -apple-system, sans-serif", position: "relative" }}>
       {/* 1. Map Top Toolbar */}
-      <header style={{ height: 54, background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 30 }}>
+      <header style={{ minHeight: isMobile ? 48 : 54, background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "6px 10px" : "0 16px", zIndex: 30, gap: 8 }}>
         {/* Search Input */}
-        <div style={{ flex: 1, maxWidth: 500, position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "6px 12px", gap: 8 }}>
-            <span style={{ color: "#64748b", fontSize: 14 }}>🔍</span>
+        <div style={{ flex: 1, minWidth: 140, maxWidth: 500, position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "5px 10px", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 13 }}>🔍</span>
             <input
               type="text"
               value={searchQuery}
@@ -685,7 +697,7 @@ function MapContent() {
                 setSearchQuery(e.target.value);
                 handleSearch(e.target.value);
               }}
-              placeholder="Search ULPIN, Survey No., Owner Name, Location..."
+              placeholder={isMobile ? "Search ULPIN / Plot..." : "Search ULPIN, Survey No., Owner Name, Location..."}
               style={{ background: "transparent", border: "none", outline: "none", color: "#0f172a", fontSize: 12, width: "100%" }}
             />
           </div>
@@ -715,115 +727,162 @@ function MapContent() {
         </div>
 
         {/* Right: Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, flexShrink: 0 }}>
           <button
             onClick={() => setShowLayers(!showLayers)}
-            style={{ background: showLayers ? "rgba(15, 23, 42, 0.08)" : "#f1f5f9", border: showLayers ? "1px solid #0f172a" : "1px solid #cbd5e1", color: "#0f172a", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ background: showLayers ? "rgba(15, 23, 42, 0.08)" : "#f1f5f9", border: showLayers ? "1px solid #0f172a" : "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
           >
-            <span>🗂</span> Layers
+            <span>🗂</span> {!isMobile && "Layers"}
           </button>
 
           <button
             onClick={() => router.push("/officer/conflicts")}
-            style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#0f172a", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#0f172a", padding: isMobile ? "5px 8px" : "6px 12px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
           >
-            <span>⚡</span> Filter
+            <span>⚡</span> {!isMobile && "Filter"}
           </button>
 
           <Link href="/admin/intelligence" style={{ textDecoration: "none" }}>
-            <div style={{ background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#059669", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-              <span>AI Insights</span>
-              <span style={{ background: "#10b981", color: "#fff", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 }}>8</span>
+            <div style={{ background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#059669", padding: isMobile ? "5px 8px" : "6px 10px", borderRadius: 6, fontSize: isMobile ? 11 : 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+              <span>🤖</span>
+              {!isMobile && <span>AI Insights</span>}
+              <span style={{ background: "#10b981", color: "#fff", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800 }}>8</span>
             </div>
           </Link>
 
-          <Link href="/login" style={{ textDecoration: "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 6, padding: "5px 10px", color: "#0f172a", fontSize: 12 }}>
-              <span>👤</span>
-              <span style={{ fontWeight: 600 }}>{currentUser?.title?.split(" ")[0] || "Officer"}</span>
-              <span style={{ fontSize: 10, color: "#64748b" }}>▾</span>
-            </div>
-          </Link>
+          {!isMobile && (
+            <Link href="/login" style={{ textDecoration: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 6, padding: "5px 10px", color: "#0f172a", fontSize: 12 }}>
+                <span>👤</span>
+                <span style={{ fontWeight: 600 }}>{currentUser?.title?.split(" ")[0] || "Officer"}</span>
+                <span style={{ fontSize: 10, color: "#64748b" }}>▾</span>
+              </div>
+            </Link>
+          )}
         </div>
       </header>
 
       {/* Main Map Body Container */}
-      <div style={{ display: "flex", flex: 1, position: "relative", overflow: "hidden" }}>
-        {/* 2. Left Sidebar: LAYER CONTROL */}
+      <div style={{ display: "flex", flex: 1, position: "relative", overflow: "hidden", height: "calc(100% - 54px)" }}>
+        {/* 2. Left Sidebar / Mobile Slide-Up Modal: LAYER CONTROL */}
         {showLayers && (
-          <aside style={{ width: 250, background: "rgba(255, 255, 255, 0.98)", borderRight: "1px solid #e2e8f0", backdropFilter: "blur(16px)", zIndex: 20, display: "flex", flexDirection: "column", overflowY: "auto", boxShadow: "2px 0 12px rgba(0,0,0,0.04)" }}>
-            <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#64748b", textTransform: "uppercase" }}>LAYER CONTROL</span>
-              <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 12 }}>✕</button>
-            </div>
+          <>
+            {isMobile && (
+              <div
+                onClick={() => setShowLayers(false)}
+                style={{ position: "absolute", inset: 0, background: "rgba(15, 23, 42, 0.4)", zIndex: 45, backdropFilter: "blur(2px)" }}
+              />
+            )}
+            <aside
+              style={{
+                width: isMobile ? "100%" : 250,
+                position: isMobile ? "absolute" : "relative",
+                bottom: isMobile ? 0 : "auto",
+                left: 0,
+                right: isMobile ? 0 : "auto",
+                maxHeight: isMobile ? "75vh" : "100%",
+                background: "rgba(255, 255, 255, 0.98)",
+                borderRight: isMobile ? "none" : "1px solid #e2e8f0",
+                borderTop: isMobile ? "1px solid #cbd5e1" : "none",
+                borderRadius: isMobile ? "16px 16px 0 0" : 0,
+                backdropFilter: "blur(16px)",
+                zIndex: 50,
+                display: "flex",
+                flexDirection: "column",
+                overflowY: "auto",
+                boxShadow: isMobile ? "0 -8px 30px rgba(0,0,0,0.18)" : "2px 0 12px rgba(0,0,0,0.04)",
+              }}
+            >
+              {isMobile && (
+                <div style={{ width: 36, height: 4, background: "#cbd5e1", borderRadius: 2, margin: "8px auto 2px" }} />
+              )}
+              <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#64748b", textTransform: "uppercase" }}>LAYER CONTROL</span>
+                <button onClick={() => setShowLayers(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4 }}>✕</button>
+              </div>
 
-            {/* Base Layers */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>BASE LAYERS</div>
-              {BASE_LAYERS_CONFIG.map((layer) => (
-                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeBaseLayers[layer.id] ? "#0f172a" : "#64748b" }}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(activeBaseLayers[layer.id])}
-                    onChange={(e) => toggleBaseLayer(layer.id, e.target.checked)}
-                    style={{ accentColor: "#10b981", cursor: "pointer" }}
-                  />
-                  <span>{layer.label}</span>
-                </label>
-              ))}
-            </div>
+              {/* Base Layers */}
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>BASE LAYERS</div>
+                {BASE_LAYERS_CONFIG.map((layer) => (
+                  <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeBaseLayers[layer.id] ? "#0f172a" : "#64748b" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(activeBaseLayers[layer.id])}
+                      onChange={(e) => toggleBaseLayer(layer.id, e.target.checked)}
+                      style={{ accentColor: "#10b981", cursor: "pointer", width: 16, height: 16 }}
+                    />
+                    <span>{layer.label}</span>
+                  </label>
+                ))}
+              </div>
 
-            {/* Governance Layers */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>GOVERNANCE LAYERS</div>
-              {GOVERNANCE_LAYERS_CONFIG.map((layer) => (
-                <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeGovLayers[layer.id] ? "#0f172a" : "#64748b" }}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(activeGovLayers[layer.id])}
-                    onChange={(e) => toggleGovernanceLayer(layer.id, e.target.checked)}
-                    style={{ accentColor: layer.color || "#10b981", cursor: "pointer" }}
-                  />
-                  <span>{layer.label}</span>
-                </label>
-              ))}
-            </div>
+              {/* Governance Layers */}
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>GOVERNANCE LAYERS</div>
+                {GOVERNANCE_LAYERS_CONFIG.map((layer) => (
+                  <label key={layer.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontSize: 12, color: activeGovLayers[layer.id] ? "#0f172a" : "#64748b" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(activeGovLayers[layer.id])}
+                      onChange={(e) => toggleGovernanceLayer(layer.id, e.target.checked)}
+                      style={{ accentColor: layer.color || "#10b981", cursor: "pointer", width: 16, height: 16 }}
+                    />
+                    <span>{layer.label}</span>
+                  </label>
+                ))}
+              </div>
 
-            {/* Land Classification Legend */}
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>LAND CLASSIFICATION</div>
-              {[
-                { label: "Agricultural", color: LAND_TYPE_COLORS.Agricultural },
-                { label: "Residential", color: LAND_TYPE_COLORS.Residential },
-                { label: "Commercial", color: LAND_TYPE_COLORS.Commercial },
-                { label: "Industrial", color: LAND_TYPE_COLORS.Industrial },
-                { label: "Forest", color: LAND_TYPE_COLORS.Forest },
-                { label: "Government Land", color: LAND_TYPE_COLORS["Government Land"] },
-                { label: "Water Body", color: LAND_TYPE_COLORS["Water Body"] },
-                { label: "Wasteland", color: LAND_TYPE_COLORS.Wasteland },
-              ].map((item) => (
-                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "#334155" }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: item.color }} />
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom Collapse */}
-            <div style={{ marginTop: "auto", padding: "10px 14px", borderTop: "1px solid #e2e8f0", fontSize: 11, color: "#64748b", display: "flex", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setShowLayers(false)}>
-              <span>Legend</span>
-              <span>›</span>
-            </div>
-          </aside>
+              {/* Land Classification Legend */}
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>LAND CLASSIFICATION</div>
+                {[
+                  { label: "Agricultural", color: LAND_TYPE_COLORS.Agricultural },
+                  { label: "Residential", color: LAND_TYPE_COLORS.Residential },
+                  { label: "Commercial", color: LAND_TYPE_COLORS.Commercial },
+                  { label: "Industrial", color: LAND_TYPE_COLORS.Industrial },
+                  { label: "Forest", color: LAND_TYPE_COLORS.Forest },
+                  { label: "Government Land", color: LAND_TYPE_COLORS["Government Land"] },
+                  { label: "Water Body", color: LAND_TYPE_COLORS["Water Body"] },
+                  { label: "Wasteland", color: LAND_TYPE_COLORS.Wasteland },
+                ].map((item) => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0", fontSize: 11, color: "#334155" }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 2, background: item.color }} />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </>
         )}
 
         {/* 3. Central Map Canvas with Floating Overlays */}
-        <div style={{ flex: 1, position: "relative", height: "100%" }}>
+        <div style={{ flex: 1, position: "relative", height: "100%", width: "100%" }}>
           {/* MapLibre Canvas Container */}
           <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
 
-          {/* Bottom Center Floating Classification Legend */}
-          <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", zIndex: 15, display: "flex", alignItems: "center", background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", borderRadius: 8, padding: "6px 14px", gap: 14, backdropFilter: "blur(12px)", boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}>
+          {/* Bottom Floating Classification Legend (Scrollable on mobile) */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: isMobile ? 12 : 16,
+              left: isMobile ? 10 : "50%",
+              right: isMobile ? 10 : "auto",
+              transform: isMobile ? "none" : "translateX(-50%)",
+              zIndex: 15,
+              display: "flex",
+              alignItems: "center",
+              background: "rgba(255, 255, 255, 0.95)",
+              border: "1px solid #cbd5e1",
+              borderRadius: 8,
+              padding: "6px 12px",
+              gap: 12,
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+              overflowX: "auto",
+              whiteSpace: "nowrap",
+            }}
+          >
             {[
               { label: "Agricultural", color: LAND_TYPE_COLORS.Agricultural },
               { label: "Residential", color: LAND_TYPE_COLORS.Residential },
@@ -832,15 +891,27 @@ function MapContent() {
               { label: "Forest", color: LAND_TYPE_COLORS.Forest },
               { label: "Water Body", color: LAND_TYPE_COLORS["Water Body"] },
             ].map((item) => (
-              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#0f172a" }}>
+              <div key={item.label} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "#0f172a", flexShrink: 0 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: item.color }} />
                 <span>{item.label}</span>
               </div>
             ))}
           </div>
 
-          {/* Bottom Left Floating Zoom & Target Controls */}
-          <div style={{ position: "absolute", bottom: 20, left: 16, zIndex: 15, display: "flex", flexDirection: "column", gap: 6 }}>
+          {/* Floating Zoom Controls */}
+          <div
+            style={{
+              position: "absolute",
+              top: isMobile ? 12 : "auto",
+              bottom: isMobile ? "auto" : 20,
+              right: isMobile ? 12 : "auto",
+              left: isMobile ? "auto" : 16,
+              zIndex: 15,
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
             <button
               onClick={() => mapRef.current?.zoomIn()}
               style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
@@ -854,24 +925,40 @@ function MapContent() {
               −
             </button>
             <button
-              onClick={() => mapRef.current?.flyTo({ center: [86.1165, 26.3630], zoom: 15.1 })}
-              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
-              title="Reset center"
+              onClick={() => mapRef.current?.flyTo({ center: [86.1165, 26.3630], zoom: 15.1, duration: 1200 })}
+              style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255, 255, 255, 0.95)", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+              title="Reset View"
             >
               🎯
             </button>
           </div>
-
-          {/* Bottom Right Scale Indicator */}
-          <div style={{ position: "absolute", bottom: 20, right: 16, zIndex: 15, background: "rgba(255, 255, 255, 0.9)", border: "1px solid #cbd5e1", borderRadius: 4, padding: "3px 8px", fontSize: 10, color: "#475569", display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ borderBottom: "2px solid #475569", width: 30, display: "inline-block" }}></span>
-            <span>100 m</span>
-          </div>
         </div>
 
-        {/* 4. Right Slide-Out Panel: PARCEL DETAILS */}
+        {/* 4. Right Slide-Out Panel / Mobile Bottom Sheet: PARCEL DETAILS */}
         {(selectedParcel || loading) && (
-          <aside style={{ width: 350, background: "#ffffff", borderLeft: "1px solid #e2e8f0", backdropFilter: "blur(16px)", zIndex: 25, display: "flex", flexDirection: "column", overflowY: "auto", boxShadow: "-4px 0 24px rgba(0,0,0,0.08)" }}>
+          <aside
+            style={{
+              width: isMobile ? "100%" : 350,
+              position: isMobile ? "absolute" : "relative",
+              bottom: isMobile ? 0 : "auto",
+              left: isMobile ? 0 : "auto",
+              right: 0,
+              maxHeight: isMobile ? "75vh" : "100%",
+              background: "#ffffff",
+              borderLeft: isMobile ? "none" : "1px solid #e2e8f0",
+              borderTop: isMobile ? "1px solid #cbd5e1" : "none",
+              borderRadius: isMobile ? "18px 18px 0 0" : 0,
+              backdropFilter: "blur(16px)",
+              zIndex: 40,
+              display: "flex",
+              flexDirection: "column",
+              overflowY: "auto",
+              boxShadow: isMobile ? "0 -8px 30px rgba(0,0,0,0.2)" : "-4px 0 24px rgba(0,0,0,0.08)",
+            }}
+          >
+            {isMobile && (
+              <div style={{ width: 36, height: 4, background: "#cbd5e1", borderRadius: 2, margin: "8px auto 2px", flexShrink: 0 }} />
+            )}
             {loading ? (
               <div style={{ padding: 40, textAlign: "center", color: "#64748b", margin: "auto" }}>
                 <div style={{ fontSize: 28, animation: "spin 1s linear infinite" }}>⏳</div>
@@ -880,7 +967,7 @@ function MapContent() {
             ) : selectedParcel ? (
               <>
                 {/* Header */}
-                <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #e2e8f0" }}>
+                <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", color: "#0f172a", textTransform: "uppercase" }}>PARCEL DETAILS</span>
@@ -900,7 +987,7 @@ function MapContent() {
                         setSelectedParcel(null);
                         mapRef.current?.setFilter("parcels-highlight", ["==", "parcel_id", ""]);
                       }}
-                      style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14 }}
+                      style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 14, padding: 4 }}
                     >
                       ✕
                     </button>
@@ -924,7 +1011,7 @@ function MapContent() {
                 </div>
 
                 {/* Tabs Bar */}
-                <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", padding: "0 16px" }}>
+                <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", padding: "0 16px", overflowX: "auto" }}>
                   {(["overview", "ownership", "documents", "history"] as const).map((tab) => (
                     <button
                       key={tab}
@@ -940,6 +1027,7 @@ function MapContent() {
                         cursor: "pointer",
                         textTransform: "capitalize",
                         marginRight: 4,
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {tab}

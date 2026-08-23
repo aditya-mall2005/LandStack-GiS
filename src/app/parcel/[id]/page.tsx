@@ -95,59 +95,59 @@ export default function ParcelPage() {
   return (
     <div className="app-content animate-in">
       {/* Page Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-lg)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-lg)", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: 4, flexWrap: "wrap" }}>
             <h1 className="page-title">Land 360°</h1>
             <span className="badge" style={{ background: STATUS_COLORS[rules?.status] + "22", color: STATUS_COLORS[rules?.status], fontSize: 12, padding: "3px 10px" }}>
               {rules?.status || "UNKNOWN"}
             </span>
           </div>
-          <p className="page-subtitle">
+          <p className="page-subtitle" style={{ wordBreak: "break-word" }}>
             ULPIN: <span style={{ color: "var(--text-accent)", fontFamily: "monospace", fontWeight: 600 }}>{p.ulpin}</span>
             {" • "}Survey: {p.survey_number}
             {" • "}{p.district_code}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+        <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
           <Link href={`/map?parcel=${p.parcel_id}`} className="btn btn-secondary"><Lucide.Map size={14} /> View on Map</Link>
           <Link href={`/services/ownership-verification?parcel=${p.parcel_id}`} className="btn btn-primary"><Lucide.CheckCircle2 size={14} /> Verify Ownership</Link>
         </div>
       </div>
 
       {/* Top Summary Row */}
-      <div className="stat-grid" style={{ marginBottom: "var(--space-lg)", gridTemplateColumns: "repeat(5, 1fr)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: "var(--space-lg)" }}>
         <div className="stat-card">
           <div className="stat-label">Area</div>
-          <div className="stat-value" style={{ fontSize: 20 }}>{Number(p.area).toLocaleString()}</div>
+          <div className="stat-value" style={{ fontSize: 18 }}>{Number(p.area).toLocaleString()}</div>
           <div className="stat-label">{p.area_unit || "sqm"}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Land Type</div>
           <div style={{ marginTop: 4 }}>
-            <span className="badge-land" style={{ background: LAND_TYPE_COLORS[p.land_type] || "#607D8B", fontSize: 13, padding: "4px 12px" }}>
+            <span className="badge-land" style={{ background: LAND_TYPE_COLORS[p.land_type] || "#607D8B", fontSize: 12, padding: "3px 10px" }}>
               {p.land_type}
             </span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Compliance Score</div>
-          <div className="stat-value" style={{ fontSize: 20, color: STATUS_COLORS[rules?.status] }}>{rules?.compliance_score || 0}%</div>
+          <div className="stat-value" style={{ fontSize: 18, color: STATUS_COLORS[rules?.status] }}>{rules?.compliance_score || 0}%</div>
           <div className="progress-bar" style={{ marginTop: 6 }}>
             <div className="progress-fill" style={{ width: `${rules?.compliance_score || 0}%`, background: rules?.compliance_score >= 80 ? "var(--status-success)" : rules?.compliance_score >= 50 ? "var(--status-warning)" : "var(--status-error)" }} />
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Data Layers</div>
-          <div className="stat-value" style={{ fontSize: 20 }}>{quality?.layers_available?.length || 0}</div>
+          <div className="stat-value" style={{ fontSize: 18 }}>{quality?.layers_available?.length || 0}</div>
           <div className="stat-label">of 9 connected</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Alerts</div>
-          <div className="stat-value" style={{ fontSize: 20, color: rules?.alerts?.length > 0 ? "var(--status-warning)" : "var(--status-success)" }}>
+          <div className="stat-value" style={{ fontSize: 18, color: rules?.alerts?.length > 0 ? "var(--status-warning)" : "var(--status-success)" }}>
             {rules?.alerts?.length || 0}
           </div>
-          <div className="stat-label">{rules?.summary?.substring(0, 40)}</div>
+          <div className="stat-label" style={{ fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rules?.summary?.substring(0, 30)}</div>
         </div>
       </div>
 
@@ -163,12 +163,13 @@ export default function ParcelPage() {
       )}
 
       {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: "var(--space-lg)" }}>
+      <div className="tabs" style={{ marginBottom: "var(--space-lg)", display: "flex", overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 4 }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             className={`tab ${activeTab === tab.id ? "active" : ""}`}
             onClick={() => setActiveTab(tab.id)}
+            style={{ flexShrink: 0 }}
           >
             {tab.icon} {tab.label}
           </button>
@@ -179,7 +180,7 @@ export default function ParcelPage() {
       <div className="animate-in" key={activeTab}>
         {/* ──── Overview ──── */}
         {activeTab === "overview" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-md)" }}>
             <div className="card">
               <h3 className="card-title" style={{ marginBottom: "var(--space-md)" }}>Parcel Details</h3>
               {[

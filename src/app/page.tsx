@@ -88,43 +88,46 @@ export default function Dashboard() {
           background: "var(--bg-elevated)",
           border: "1px solid var(--border-default)",
           borderRadius: "var(--radius-lg)",
-          padding: "var(--space-lg) var(--space-xl)",
+          padding: "var(--space-md) var(--space-lg)",
           marginBottom: "var(--space-lg)",
           boxShadow: "var(--shadow-sm)",
+          flexWrap: "wrap",
+          gap: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div
             style={{
-              width: 56,
-              height: 56,
+              width: 48,
+              height: 48,
               borderRadius: "var(--radius-md)",
               background: "var(--brand-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 28,
-              boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
+              fontSize: 24,
+              boxShadow: "0 4px 14px rgba(59, 130, 246, 0.25)",
+              flexShrink: 0,
             }}
           >
-            {React.createElement(getPersonaIcon(currentUser.icon), { size: 28, color: "#ffffff" })}
+            {React.createElement(getPersonaIcon(currentUser.icon), { size: 24, color: "#ffffff" })}
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
                 Welcome, {currentUser.name}
               </h1>
               <span className="badge badge-info" style={{ fontSize: 11 }}>
                 {currentUser.role}
               </span>
             </div>
-            <p style={{ fontSize: 13, color: "var(--text-accent)", marginTop: 4, margin: 0 }}>
+            <p style={{ fontSize: 12, color: "var(--text-accent)", marginTop: 2, margin: 0 }}>
               {currentUser.title} • {currentUser.jurisdiction}
             </p>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/login" className="btn btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
             <Lucide.Repeat size={14} /> Switch Role
           </Link>
